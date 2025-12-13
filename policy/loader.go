@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -80,20 +81,20 @@ func (l *Loader) Load(ctx context.Context) (*CompiledPolicy, error) {
 
 	// Check if file changed
 	hash := sha256.Sum256(data)
-	if l.policy != nil && string(hash[:]) == string(l.lastHash) {
+	if l.policy != nil && len(hash) == len(l.lastHash) && bytes.Equal(hash[:], l.lastHash) {
 		return l.policy, nil
 	}
 
 	// Parse YAML
 	var config PolicyConfig
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("parsing policy YAML: %w", err)
+	if parseErr := yaml.Unmarshal(data, &config); parseErr != nil {
+		return nil, fmt.Errorf("parsing policy YAML: %w", parseErr)
 	}
 
 	// Validate policy
 	for _, v := range l.validators {
-		if err := v.Validate(&config); err != nil {
-			return nil, fmt.Errorf("policy validation failed: %w", err)
+		if validateErr := v.Validate(&config); validateErr != nil {
+			return nil, fmt.Errorf("policy validation failed: %w", validateErr)
 		}
 	}
 
@@ -180,20 +181,21 @@ func (v *DefaultPolicyValidator) Validate(config *PolicyConfig) error {
 	}
 
 	// Validate binaries
-	for i, b := range config.Binaries {
+	for i := range config.Binaries {
+		b := &config.Binaries[i]
 		if b.Path == "" {
 			return fmt.Errorf("binary %d: path is required", i)
 		}
 
 		// Validate arg patterns
-		for j, p := range b.AllowedArgs {
-			if p.Pattern == "" {
+		for j := range b.AllowedArgs {
+			if b.AllowedArgs[j].Pattern == "" {
 				return fmt.Errorf("binary %d, allowed_arg %d: pattern is required", i, j)
 			}
 		}
 
-		for j, p := range b.DeniedArgs {
-			if p.Pattern == "" {
+		for j := range b.DeniedArgs {
+			if b.DeniedArgs[j].Pattern == "" {
 				return fmt.Errorf("binary %d, denied_arg %d: pattern is required", i, j)
 			}
 		}

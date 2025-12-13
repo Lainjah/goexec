@@ -195,7 +195,7 @@ func wildcardToRegexp(pattern string) *regexp.Regexp {
 
 // isValidEnvKey checks if a key is a valid environment variable name.
 func isValidEnvKey(key string) bool {
-	if len(key) == 0 {
+	if key == "" {
 		return false
 	}
 

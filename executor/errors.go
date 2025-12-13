@@ -203,7 +203,7 @@ func NewPolicyError(binary string, violations []Violation) error {
 }
 
 // NewTimeoutError creates a timeout error.
-func NewTimeoutError(binary string, duration string) error {
+func NewTimeoutError(binary, duration string) error {
 	return &ExecutionError{
 		Op:        "execute",
 		Binary:    binary,

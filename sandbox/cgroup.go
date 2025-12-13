@@ -83,7 +83,7 @@ func (m *CgroupManager) Create(name string, limits *CgroupLimits) (*Cgroup, erro
 	relPath := filepath.Join(m.namespace, safeName)
 	fullPath := filepath.Join(m.basePath, relPath)
 
-	if err := m.fs.Mkdir(relPath, 0755); err != nil {
+	if err := m.fs.Mkdir(relPath, 0o755); err != nil {
 		return nil, fmt.Errorf("creating cgroup directory: %w", err)
 	}
 
@@ -153,9 +153,9 @@ func (c *Cgroup) applyLimitsV1(limits *CgroupLimits) error {
 	// Memory limit (cgroup v1 uses memory.limit_in_bytes)
 	if limits.MemoryLimitBytes > 0 {
 		memRelPath := filepath.Join(filepath.Dir(c.relPath), "memory", filepath.Base(c.relPath))
-		if err := c.fs.Mkdir(memRelPath, 0755); err == nil {
+		if err := c.fs.Mkdir(memRelPath, 0o755); err == nil {
 			if err := c.fs.WriteFile(filepath.Join(memRelPath, "memory.limit_in_bytes"),
-				[]byte(strconv.FormatInt(limits.MemoryLimitBytes, 10)), 0644); err != nil {
+				[]byte(strconv.FormatInt(limits.MemoryLimitBytes, 10)), 0o644); err != nil {
 				return fmt.Errorf("setting memory limit: %w", err)
 			}
 		}
@@ -164,17 +164,17 @@ func (c *Cgroup) applyLimitsV1(limits *CgroupLimits) error {
 	// CPU quota (cgroup v1 uses cpu.cfs_quota_us and cpu.cfs_period_us)
 	if limits.CPUQuotaUS > 0 {
 		cpuRelPath := filepath.Join(filepath.Dir(c.relPath), "cpu", filepath.Base(c.relPath))
-		if err := c.fs.Mkdir(cpuRelPath, 0755); err == nil {
+		if err := c.fs.Mkdir(cpuRelPath, 0o755); err == nil {
 			period := limits.CPUPeriodUS
 			if period == 0 {
 				period = 100000
 			}
 			if err := c.fs.WriteFile(filepath.Join(cpuRelPath, "cpu.cfs_period_us"),
-				[]byte(strconv.FormatInt(period, 10)), 0644); err != nil {
+				[]byte(strconv.FormatInt(period, 10)), 0o644); err != nil {
 				return fmt.Errorf("setting CPU period: %w", err)
 			}
 			if err := c.fs.WriteFile(filepath.Join(cpuRelPath, "cpu.cfs_quota_us"),
-				[]byte(strconv.FormatInt(limits.CPUQuotaUS, 10)), 0644); err != nil {
+				[]byte(strconv.FormatInt(limits.CPUQuotaUS, 10)), 0o644); err != nil {
 				return fmt.Errorf("setting CPU quota: %w", err)
 			}
 		}

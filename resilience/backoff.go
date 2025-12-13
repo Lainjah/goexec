@@ -66,7 +66,7 @@ func secureFloat64() float64 {
 	// Convert bytes to uint64 and normalize to [0.0, 1.0)
 	// Use only 53 bits to maintain float64 precision
 	val := binary.BigEndian.Uint64(buf[:])
-	val = val >> 11 // Keep 53 bits for float64 mantissa
+	val >>= 11 // Keep 53 bits for float64 mantissa
 	return float64(val) / float64(1<<53)
 }
 
@@ -169,11 +169,11 @@ type LinearBackoff struct {
 }
 
 // NewLinearBackoff creates a new linear backoff.
-func NewLinearBackoff(initial, increment, max time.Duration, maxRetries int) *LinearBackoff {
+func NewLinearBackoff(initial, increment, maxDur time.Duration, maxRetries int) *LinearBackoff {
 	return &LinearBackoff{
 		initial:    initial,
 		increment:  increment,
-		max:        max,
+		max:        maxDur,
 		maxRetries: maxRetries,
 		current:    initial,
 	}
@@ -264,10 +264,10 @@ type DecorrelatedJitterBackoff struct {
 }
 
 // NewDecorrelatedJitterBackoff creates a new decorrelated jitter backoff.
-func NewDecorrelatedJitterBackoff(base, cap time.Duration, maxRetries int) *DecorrelatedJitterBackoff {
+func NewDecorrelatedJitterBackoff(base, capDur time.Duration, maxRetries int) *DecorrelatedJitterBackoff {
 	return &DecorrelatedJitterBackoff{
 		base:       base,
-		cap:        cap,
+		cap:        capDur,
 		maxRetries: maxRetries,
 		sleep:      base,
 	}

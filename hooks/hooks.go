@@ -197,7 +197,7 @@ func (r *Registry) RunError(ctx context.Context, cmd *executor.Command, execErr 
 	return nil
 }
 
-// Helper functions for removing hooks by name
+// Helper functions for removing hooks by name.
 func removeByName(hooks []PreExecuteHook, name string) []PreExecuteHook {
 	result := make([]PreExecuteHook, 0, len(hooks))
 	for _, h := range hooks {

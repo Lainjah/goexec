@@ -110,7 +110,6 @@ type executor struct {
 
 	shutdown int32
 	wg       sync.WaitGroup
-	mu       sync.RWMutex
 }
 
 // Builder creates configured Executor instances.

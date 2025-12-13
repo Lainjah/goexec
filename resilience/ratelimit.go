@@ -123,13 +123,13 @@ func (rl *rateLimiter) getLimiter(binary string) *rate.Limiter {
 	defer rl.mu.Unlock()
 
 	// Double-check after acquiring write lock
-	if limiter, ok := rl.binaryLimiters[binary]; ok {
-		return limiter
+	if existing, ok := rl.binaryLimiters[binary]; ok {
+		return existing
 	}
 
-	limiter = rate.NewLimiter(rate.Limit(rl.config.DefaultLimit), rl.config.DefaultBurst)
-	rl.binaryLimiters[binary] = limiter
-	return limiter
+	newLimiter := rate.NewLimiter(rate.Limit(rl.config.DefaultLimit), rl.config.DefaultBurst)
+	rl.binaryLimiters[binary] = newLimiter
+	return newLimiter
 }
 
 // TokenBucket implements a simple token bucket rate limiter.
@@ -142,7 +142,7 @@ type TokenBucket struct {
 }
 
 // NewTokenBucket creates a new token bucket.
-func NewTokenBucket(capacity float64, refillRate float64) *TokenBucket {
+func NewTokenBucket(capacity, refillRate float64) *TokenBucket {
 	return &TokenBucket{
 		tokens:     capacity,
 		capacity:   capacity,

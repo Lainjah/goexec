@@ -170,13 +170,13 @@ func (cb *circuitBreaker) getBreaker(binary string) *breaker {
 	defer cb.mu.Unlock()
 
 	// Double-check
-	if b, ok := cb.breakers[binary]; ok {
-		return b
+	if existing, ok := cb.breakers[binary]; ok {
+		return existing
 	}
 
-	b = newBreaker(&cb.config)
-	cb.breakers[binary] = b
-	return b
+	newB := newBreaker(&cb.config)
+	cb.breakers[binary] = newB
+	return newB
 }
 
 func newBreaker(config *CircuitBreakerConfig) *breaker {

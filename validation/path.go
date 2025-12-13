@@ -165,7 +165,7 @@ func (v *PathValidator) validateBinaryPath(path string) error {
 		}
 
 		// Check executable permission
-		if info.Mode()&0111 == 0 {
+		if info.Mode()&0o111 == 0 {
 			return fmt.Errorf("%w: binary is not executable", executor.ErrInvalidPath)
 		}
 	}

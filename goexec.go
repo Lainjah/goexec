@@ -361,6 +361,7 @@ func Execute(ctx context.Context, binary string, args ...string) (*Result, error
 	}
 	defer func() {
 		// Ignore shutdown errors in defer - cleanup failure doesn't affect result
+		//nolint:errcheck // Shutdown errors are non-critical in cleanup context
 		_ = exec.Shutdown(context.Background())
 	}()
 
@@ -384,6 +385,7 @@ func ExecuteWithTimeout(ctx context.Context, timeout time.Duration, binary strin
 	}
 	defer func() {
 		// Ignore shutdown errors in defer - cleanup failure doesn't affect result
+		//nolint:errcheck // Shutdown errors are non-critical in cleanup context
 		_ = exec.Shutdown(context.Background())
 	}()
 
@@ -407,6 +409,7 @@ func Stream(ctx context.Context, stdout, stderr io.Writer, binary string, args .
 	}
 	defer func() {
 		// Ignore shutdown errors in defer - cleanup failure doesn't affect result
+		//nolint:errcheck // Shutdown errors are non-critical in cleanup context
 		_ = exec.Shutdown(context.Background())
 	}()
 

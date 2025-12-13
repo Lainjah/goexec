@@ -223,7 +223,7 @@ func (p *pool) submitNonBlocking(task Task) error {
 	}
 }
 
-func (p *pool) submitCallerRuns(ctx context.Context, task Task) error {
+func (p *pool) submitCallerRuns(_ context.Context, task Task) error {
 	select {
 	case p.taskQueue <- task:
 		return nil
@@ -395,7 +395,6 @@ func (w *worker) run() {
 		case <-idleTimer.C:
 			if isIdle {
 				atomic.AddInt32(&w.pool.stats.idleWorkers, -1)
-				isIdle = false
 			}
 
 			// Check if we can reduce workers

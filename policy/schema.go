@@ -187,7 +187,7 @@ func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // MarshalYAML marshals a duration to YAML.
 func (d Duration) MarshalYAML() (interface{}, error) {
-	return d.Duration.String(), nil
+	return d.String(), nil
 }
 
 // ByteSize represents a size in bytes that can be unmarshaled from YAML.
@@ -219,7 +219,7 @@ func (b *ByteSize) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // parseByteSize parses a byte size string like "10Mi", "1Gi", etc.
 func parseByteSize(s string) (int64, error) {
-	if len(s) == 0 {
+	if s == "" {
 		return 0, nil
 	}
 

@@ -299,11 +299,12 @@ func CreateAuditEvent(cmd *executor.Command, result *executor.Result, execErr er
 		event.Type = AuditEventError
 	}
 
-	if result.Status == executor.StatusPolicyDenied {
+	switch result.Status {
+	case executor.StatusPolicyDenied:
 		event.Type = AuditEventPolicyDenied
-	} else if result.Status == executor.StatusSandboxViolation {
+	case executor.StatusSandboxViolation:
 		event.Type = AuditEventSandboxViolation
-	} else if result.Status == executor.StatusRateLimited {
+	case executor.StatusRateLimited:
 		event.Type = AuditEventRateLimited
 	}
 

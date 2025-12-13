@@ -33,6 +33,8 @@ func TestNew(t *testing.T) {
 	}
 
 	stats := p.Stats()
+	// G115: Safe conversion - we clamp to MaxInt32 to prevent overflow
+	// #nosec G115
 	maxWorkersInt32 := int32(min(config.MaxWorkers, 0x7FFFFFFF))
 	if stats.ActiveWorkers < 0 || stats.ActiveWorkers > maxWorkersInt32 {
 		t.Errorf("Invalid active workers count: %d", stats.ActiveWorkers)
@@ -469,6 +471,8 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 
 	execCount := atomic.LoadInt32(&executed)
 	halfConcurrency := concurrency / 2
+	// G115: Safe conversion - we clamp to MaxInt32 to prevent overflow
+	// #nosec G115
 	halfConcurrencyInt32 := int32(min(halfConcurrency, 0x7FFFFFFF))
 	if execCount < halfConcurrencyInt32 {
 		t.Errorf("Expected at least %d executions, got %d", halfConcurrency, execCount)
@@ -541,6 +545,8 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 	stats := p.Stats()
 	totalWorkers := stats.ActiveWorkers + stats.IdleWorkers
 
+	// G115: Safe conversion - we clamp to MaxInt32 to prevent overflow
+	// #nosec G115
 	minWorkersInt32 := int32(min(config.MinWorkers, 0x7FFFFFFF))
 	if totalWorkers < minWorkersInt32 {
 		t.Errorf("Workers dropped below minimum: %d < %d", totalWorkers, config.MinWorkers)

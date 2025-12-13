@@ -65,7 +65,9 @@ security-scan:
 	@echo ""
 	@echo "Running govulncheck vulnerability scanner..."
 	@which govulncheck > /dev/null || go install golang.org/x/vuln/cmd/govulncheck@latest
-	@govulncheck ./... || echo "Note: Some stdlib vulnerabilities may require Go upgrade. Review above."
+	@govulncheck ./... 2>&1 || true
+	@echo ""
+	@echo "Note: Standard library vulnerabilities require Go upgrade. See SECURITY.md for details."
 
 # ============================================================================
 # BUILD

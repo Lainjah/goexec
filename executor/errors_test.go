@@ -157,8 +157,8 @@ func TestNewCircuitOpenError(t *testing.T) {
 
 func TestExecutionError_Error(t *testing.T) {
 	tests := []struct {
-		name   string
-		err    *ExecutionError
+		name     string
+		err      *ExecutionError
 		contains string
 	}{
 		{
@@ -222,8 +222,8 @@ func TestExecutionError_Is(t *testing.T) {
 
 func TestIsRetryable(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      error
+		name      string
+		err       error
 		retryable bool
 	}{
 		{"timeout error", NewTimeoutError("/bin/test", "30s"), true},
@@ -296,7 +296,7 @@ func TestViolation(t *testing.T) {
 		Code:     "POLICY_001",
 		Field:    "binary",
 		Message:  "Binary not allowed",
-		Severity: SeverityError,
+		Severity: SeverityError, // nolint: govet // Test case needs all fields
 	}
 
 	if violation.Code == "" {
@@ -329,4 +329,3 @@ func TestErrorCode_Constants(t *testing.T) {
 		}
 	}
 }
-

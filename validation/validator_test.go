@@ -225,7 +225,7 @@ func TestRegistry_ConcurrentAccess(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			cmd := &executor.Command{Binary: "/bin/echo"}
-			registry.ValidateAll(context.Background(), cmd)
+			_ = registry.ValidateAll(context.Background(), cmd)
 		}()
 	}
 
@@ -259,7 +259,7 @@ func TestRegistry_PriorityOrdering(t *testing.T) {
 	registry.Register(v2)
 
 	cmd := &executor.Command{Binary: "/bin/echo"}
-	registry.ValidateAll(context.Background(), cmd)
+	_ = registry.ValidateAll(context.Background(), cmd)
 
 	if len(callOrder) != 2 {
 		t.Fatalf("Expected 2 validators called, got %d", len(callOrder))

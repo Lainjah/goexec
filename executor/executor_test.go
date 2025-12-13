@@ -11,11 +11,13 @@ import (
 	internalexec "github.com/victoralfred/goexec/internal/exec"
 )
 
-// mockRunner is a mock implementation of the internal runner
+// mockRunner is a mock implementation of the internal runner.
+// nolint: unused // Reserved for future test use
 type mockRunner struct {
 	runFunc func(ctx context.Context, config *internalexec.RunConfig) (*internalexec.RunResult, error)
 }
 
+// nolint: unused // Reserved for future test use
 func (m *mockRunner) Run(ctx context.Context, config *internalexec.RunConfig) (*internalexec.RunResult, error) {
 	if m.runFunc != nil {
 		return m.runFunc(ctx, config)
@@ -33,7 +35,7 @@ func (m *mockRunner) Run(ctx context.Context, config *internalexec.RunConfig) (*
 	}, nil
 }
 
-// mockPolicy is a mock policy implementation
+// mockPolicy is a mock policy implementation.
 type mockPolicy struct {
 	validateFunc func(ctx context.Context, cmd *Command) (*ValidationResult, error)
 }
@@ -45,7 +47,7 @@ func (m *mockPolicy) Validate(ctx context.Context, cmd *Command) (*ValidationRes
 	return &ValidationResult{Allowed: true}, nil
 }
 
-// mockRateLimiter is a mock rate limiter
+// mockRateLimiter is a mock rate limiter.
 type mockRateLimiter struct {
 	allowFunc func(binary string) bool
 	waitFunc  func(ctx context.Context, binary string) error
@@ -97,7 +99,7 @@ type mockTelemetry struct {
 	recordMetricFunc func(name string, value float64, labels map[string]string)
 }
 
-func (m *mockTelemetry) StartSpan(ctx context.Context, name string) (context.Context, func()) {
+func (m *mockTelemetry) StartSpan(ctx context.Context, name string) (newCtx context.Context, endSpan func()) {
 	if m.startSpanFunc != nil {
 		return m.startSpanFunc(ctx, name)
 	}
@@ -143,11 +145,21 @@ func TestNewBuilder(t *testing.T) {
 	if exec == nil {
 		t.Fatal("Build() returned nil executor")
 	}
+	if err := exec.Shutdown(context.Background()); err != nil {
+		t.Errorf("Shutdown() failed: %v", err)
+	}
 }
 
 func TestExecutor_Execute_Success(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if err := exec.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	cmd, err := NewCommand("/bin/echo", "hello").Build()
 	if err != nil {
@@ -172,15 +184,23 @@ func TestExecutor_Execute_Success(t *testing.T) {
 }
 
 func TestExecutor_Execute_Shutdown(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	if err := exec.Shutdown(context.Background()); err != nil {
+		t.Errorf("Shutdown() failed: %v", err)
+	}
 
-	cmd, _ := NewCommand("/bin/echo", "hello").Build()
+	cmd, err := NewCommand("/bin/echo", "hello").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
-	_, err := exec.Execute(ctx, cmd)
-	if !errors.Is(err, ErrExecutorShutdown) {
-		t.Errorf("Expected ErrExecutorShutdown, got %v", err)
+	_, execErr := exec.Execute(ctx, cmd)
+	if !errors.Is(execErr, ErrExecutorShutdown) {
+		t.Errorf("Expected ErrExecutorShutdown, got %v", execErr)
 	}
 }
 
@@ -196,10 +216,20 @@ func TestExecutor_Execute_PolicyDenied(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithPolicy(policy).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithPolicy(policy).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if err := exec.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/forbidden", "arg").Build()
+	cmd, err := NewCommand("/bin/forbidden", "arg").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	result, err := exec.Execute(ctx, cmd)
@@ -221,10 +251,20 @@ func TestExecutor_Execute_RateLimited(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithRateLimiter(rateLimiter).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithRateLimiter(rateLimiter).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if err := exec.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "hello").Build()
+	cmd, err := NewCommand("/bin/echo", "hello").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	result, err := exec.Execute(ctx, cmd)
@@ -301,7 +341,7 @@ func TestExecutor_Execute_Hooks(t *testing.T) {
 	cmd, _ := NewCommand("/bin/echo", "test").Build()
 	ctx := context.Background()
 
-	exec.Execute(ctx, cmd) // Ignore error
+	_, _ = exec.Execute(ctx, cmd) // Ignore error for test purposes
 
 	if !preCalled {
 		t.Error("PreExecute hook was not called")
@@ -343,7 +383,7 @@ func TestExecutor_Execute_Telemetry(t *testing.T) {
 	cmd, _ := NewCommand("/bin/echo", "test").Build()
 	ctx := context.Background()
 
-	exec.Execute(ctx, cmd) // Ignore error
+	_, _ = exec.Execute(ctx, cmd) // Ignore error for test purposes
 
 	if !spanStarted {
 		t.Error("Telemetry span was not started")
@@ -401,15 +441,22 @@ func TestExecutor_ExecuteBatch(t *testing.T) {
 }
 
 func TestExecutor_Stream(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if err := exec.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	cmd, _ := NewCommand("/bin/echo", "streamed output").Build()
 	ctx := context.Background()
 
 	var stdout, stderr strings.Builder
 
-	err := exec.Stream(ctx, cmd, &stdout, &stderr)
+	err = exec.Stream(ctx, cmd, &stdout, &stderr)
 	if err != nil {
 		t.Logf("Stream failed (may be expected): %v", err)
 		return
@@ -426,20 +473,27 @@ func TestExecutor_Shutdown(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := exec.Shutdown(ctx)
+	var err error
+	err = exec.Shutdown(ctx)
 	if err != nil {
 		t.Errorf("Shutdown failed: %v", err)
 	}
 }
 
 func TestExecutor_Shutdown_WithTimeout(t *testing.T) {
-	exec, _ := NewBuilder().Build()
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
 
 	// Start a long-running operation
-	cmd, _ := NewCommand("/bin/sleep", "1").Build()
+	cmd, err := NewCommand("/bin/sleep", "1").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	go func() {
 		ctx := context.Background()
-		exec.Execute(ctx, cmd)
+		_, _ = exec.Execute(ctx, cmd) // Ignore error for test purposes
 	}()
 
 	// Give it time to start
@@ -449,7 +503,7 @@ func TestExecutor_Shutdown_WithTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 
-	err := exec.Shutdown(ctx)
+	err = exec.Shutdown(ctx)
 	if err == nil {
 		t.Log("Shutdown completed (operations finished quickly)")
 	} else if !errors.Is(err, context.DeadlineExceeded) {

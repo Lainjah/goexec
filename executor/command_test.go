@@ -424,7 +424,7 @@ func TestPriority_String(t *testing.T) {
 func TestCommandBuilder_Chain(t *testing.T) {
 	cmd, err := NewCommand("/bin/echo", "test").
 		WithWorkingDir("/tmp").
-		WithTimeout(5 * time.Second).
+		WithTimeout(5*time.Second).
 		WithEnv("KEY1", "value1").
 		WithEnv("KEY2", "value2").
 		WithMetadata("meta", "data").
@@ -512,4 +512,3 @@ func TestCommand_Clone_EmptyFields(t *testing.T) {
 		t.Error("Clone should initialize Metadata map")
 	}
 }
-

@@ -25,7 +25,11 @@ func TestNew(t *testing.T) {
 	}
 
 	stats := p.Stats()
-	if stats.ActiveWorkers < 0 || stats.ActiveWorkers > int32(config.MaxWorkers) {
+	maxWorkersInt32 := int32(config.MaxWorkers)
+	if config.MaxWorkers > int(maxWorkersInt32) {
+		maxWorkersInt32 = 0x7FFFFFFF // MaxInt32
+	}
+	if stats.ActiveWorkers < 0 || stats.ActiveWorkers > maxWorkersInt32 {
 		t.Errorf("Invalid active workers count: %d", stats.ActiveWorkers)
 	}
 }
@@ -36,8 +40,15 @@ func TestPool_Submit_Success(t *testing.T) {
 	config.MaxWorkers = 4
 	config.QueueSize = 10
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	var executed int32
 	task := Task{
@@ -47,7 +58,7 @@ func TestPool_Submit_Success(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	err := p.Submit(ctx, task)
+	err = p.Submit(ctx, task)
 	if err != nil {
 		t.Fatalf("Submit failed: %v", err)
 	}
@@ -62,12 +73,15 @@ func TestPool_Submit_Success(t *testing.T) {
 
 func TestPool_Submit_Shutdown(t *testing.T) {
 	config := DefaultConfig()
-	p, _ := New(config)
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := p.Shutdown(ctx)
+	err = p.Shutdown(ctx)
 	if err != nil {
 		t.Fatalf("Shutdown failed: %v", err)
 	}
@@ -86,8 +100,15 @@ func TestPool_Submit_BlockingStrategy(t *testing.T) {
 	config.QueueSize = 1
 	config.BackpressureStrategy = StrategyBlock
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Fill the queue
 	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
@@ -97,7 +118,7 @@ func TestPool_Submit_BlockingStrategy(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
 
-	err := p.Submit(ctx, Task{Fn: func() {}})
+	err = p.Submit(ctx, Task{Fn: func() {}})
 	// May succeed or timeout depending on execution speed
 	_ = err
 }
@@ -109,15 +130,22 @@ func TestPool_Submit_RejectStrategy(t *testing.T) {
 	config.QueueSize = 1
 	config.BackpressureStrategy = StrategyReject
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Fill the queue
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
+	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
+	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
 
 	// This should reject immediately
-	err := p.Submit(context.Background(), Task{Fn: func() {}})
+	err = p.Submit(context.Background(), Task{Fn: func() {}})
 	if err == nil {
 		// If it didn't reject, queue had space (acceptable)
 		t.Log("Submit succeeded (queue had space)")
@@ -133,8 +161,15 @@ func TestPool_Submit_CallerRunsStrategy(t *testing.T) {
 	config.QueueSize = 1
 	config.BackpressureStrategy = StrategyCallerRuns
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	var executed int32
 	// Fill the queue
@@ -148,7 +183,7 @@ func TestPool_Submit_CallerRunsStrategy(t *testing.T) {
 		},
 	}
 
-	err := p.Submit(context.Background(), task)
+	err = p.Submit(context.Background(), task)
 	if err != nil {
 		t.Errorf("Submit failed: %v", err)
 	}
@@ -170,8 +205,15 @@ func TestPool_Submit_DropOldestStrategy(t *testing.T) {
 	config.QueueSize = 1
 	config.BackpressureStrategy = StrategyDropOldest
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	var executed int32
 	var dropped int32
@@ -184,7 +226,7 @@ func TestPool_Submit_DropOldestStrategy(t *testing.T) {
 	})
 
 	// Try to submit another - should drop the first
-	err := p.Submit(context.Background(), Task{
+	err = p.Submit(context.Background(), Task{
 		Fn: func() {
 			atomic.AddInt32(&dropped, 1)
 		},
@@ -208,15 +250,22 @@ func TestPool_SubmitFunc(t *testing.T) {
 	config := DefaultConfig()
 	config.MinWorkers = 2
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	var executed int32
 	fn := func() {
 		atomic.AddInt32(&executed, 1)
 	}
 
-	err := p.SubmitFunc(context.Background(), fn)
+	err = p.SubmitFunc(context.Background(), fn)
 	if err != nil {
 		t.Fatalf("SubmitFunc failed: %v", err)
 	}
@@ -232,8 +281,15 @@ func TestPool_Stats(t *testing.T) {
 	config.MinWorkers = 2
 	config.MaxWorkers = 4
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	stats := p.Stats()
 
@@ -255,11 +311,18 @@ func TestPool_Resize(t *testing.T) {
 	config.MinWorkers = 2
 	config.MaxWorkers = 10
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Increase workers
-	err := p.Resize(5)
+	err = p.Resize(5)
 	if err != nil {
 		t.Fatalf("Resize failed: %v", err)
 	}
@@ -273,11 +336,18 @@ func TestPool_Resize(t *testing.T) {
 
 func TestPool_Resize_Invalid(t *testing.T) {
 	config := DefaultConfig()
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Should handle invalid size gracefully
-	err := p.Resize(0)
+	err = p.Resize(0)
 	if err != nil {
 		t.Logf("Resize(0) error: %v", err)
 	}
@@ -344,7 +414,8 @@ func TestPool_Shutdown_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	err := p.Shutdown(ctx)
+	var err error
+	err = p.Shutdown(ctx)
 	if err == nil {
 		t.Log("Shutdown completed (task finished quickly)")
 	} else if !errors.Is(err, context.DeadlineExceeded) {
@@ -358,8 +429,15 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 	config.MaxWorkers = 8
 	config.QueueSize = 100
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	var wg sync.WaitGroup
 	var executed int32
@@ -369,7 +447,7 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := p.Submit(context.Background(), Task{
+			err = p.Submit(context.Background(), Task{
 				Fn: func() {
 					atomic.AddInt32(&executed, 1)
 				},
@@ -386,8 +464,13 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 
 	execCount := atomic.LoadInt32(&executed)
-	if execCount < int32(concurrency/2) {
-		t.Errorf("Expected at least %d executions, got %d", concurrency/2, execCount)
+	halfConcurrency := concurrency / 2
+	halfConcurrencyInt32 := int32(halfConcurrency)
+	if halfConcurrency > int(halfConcurrencyInt32) {
+		halfConcurrencyInt32 = 0x7FFFFFFF // MaxInt32
+	}
+	if execCount < halfConcurrencyInt32 {
+		t.Errorf("Expected at least %d executions, got %d", halfConcurrency, execCount)
 	}
 }
 
@@ -395,8 +478,15 @@ func TestPool_AvgTimes(t *testing.T) {
 	config := DefaultConfig()
 	config.MinWorkers = 2
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Submit several tasks
 	for i := 0; i < 5; i++ {
@@ -426,8 +516,15 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 	config.MaxWorkers = 5
 	config.IdleTimeout = 100 * time.Millisecond
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Submit a task
 	p.Submit(context.Background(), Task{
@@ -443,7 +540,11 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 	stats := p.Stats()
 	totalWorkers := stats.ActiveWorkers + stats.IdleWorkers
 
-	if totalWorkers < int32(config.MinWorkers) {
+	minWorkersInt32 := int32(config.MinWorkers)
+	if config.MinWorkers > int(minWorkersInt32) {
+		minWorkersInt32 = 0x7FFFFFFF // MaxInt32
+	}
+	if totalWorkers < minWorkersInt32 {
 		t.Errorf("Workers dropped below minimum: %d < %d", totalWorkers, config.MinWorkers)
 	}
 	_ = initialWorkers
@@ -455,8 +556,15 @@ func TestPool_Autoscale(t *testing.T) {
 	config.MaxWorkers = 10
 	config.QueueSize = 50
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Fill the queue to trigger autoscaling
 	for i := 0; i < 30; i++ {
@@ -521,8 +629,15 @@ func TestPool_Submit_ContextCanceled(t *testing.T) {
 	config.QueueSize = 1
 	config.BackpressureStrategy = StrategyBlock
 
-	p, _ := New(config)
-	defer p.Shutdown(context.Background())
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
+	defer func() {
+		if err := p.Shutdown(context.Background()); err != nil {
+			t.Errorf("Shutdown() failed: %v", err)
+		}
+	}()
 
 	// Fill the queue
 	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(200 * time.Millisecond) }})
@@ -532,7 +647,7 @@ func TestPool_Submit_ContextCanceled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	err := p.Submit(ctx, Task{Fn: func() {}})
+	err = p.Submit(ctx, Task{Fn: func() {}})
 	if err == nil {
 		t.Error("Expected error for canceled context")
 	}
@@ -540,4 +655,3 @@ func TestPool_Submit_ContextCanceled(t *testing.T) {
 		t.Errorf("Expected context.Canceled, got %v", err)
 	}
 }
-

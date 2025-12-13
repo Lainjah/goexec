@@ -186,9 +186,9 @@ func TestConstantBackoff_Reset(t *testing.T) {
 func TestLinearBackoff(t *testing.T) {
 	initial := 100 * time.Millisecond
 	increment := 50 * time.Millisecond
-	max := 500 * time.Millisecond
+	maxDur := 500 * time.Millisecond
 
-	backoff := NewLinearBackoff(initial, increment, max, 10)
+	backoff := NewLinearBackoff(initial, increment, maxDur, 10)
 
 	if backoff == nil {
 		t.Fatal("NewLinearBackoff returned nil")
@@ -212,15 +212,15 @@ func TestLinearBackoff(t *testing.T) {
 func TestLinearBackoff_MaxCap(t *testing.T) {
 	initial := 100 * time.Millisecond
 	increment := 200 * time.Millisecond
-	max := 300 * time.Millisecond
+	maxDur := 300 * time.Millisecond
 
-	backoff := NewLinearBackoff(initial, increment, max, 10)
+	backoff := NewLinearBackoff(initial, increment, maxDur, 10)
 
-	// Should cap at max
+	// Should cap at maxDur
 	for i := 0; i < 5; i++ {
 		duration := backoff.Next()
-		if duration > max {
-			t.Errorf("Duration %v exceeded max %v", duration, max)
+		if duration > maxDur {
+			t.Errorf("Duration %v exceeded max %v", duration, maxDur)
 		}
 	}
 }

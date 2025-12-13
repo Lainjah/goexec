@@ -2,18 +2,19 @@ name: CI
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
+    tags: ['v*']
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
 
 jobs:
-  test:
-    name: Test
+  ci:
+    name: CI Checks
     runs-on: ubuntu-latest
     strategy:
       matrix:
         go-version: ['1.22', '1.23']
-    
+
     steps:
     - uses: actions/checkout@v4
 
@@ -28,39 +29,29 @@ jobs:
         path: |
           ~/.cache/go-build
           ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
         restore-keys: |
-          ${{ runner.os }}-go-
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
 
-    - name: Download dependencies
-      run: go mod download
-
-    - name: Run unit tests
-      run: go test -v -race -coverprofile=coverage.out ./...
-
-    - name: Run integration tests
-      run: go test -tags=integration -v -race -coverprofile=coverage.integration.out ./...
-
-    - name: Generate coverage report
+    - name: Install tools
       run: |
-        go tool cover -func=coverage.out | tail -1
-        if [ -f coverage.integration.out ]; then
-          echo "Integration test coverage:"
-          go tool cover -func=coverage.integration.out | tail -1
-        fi
+        go install github.com/securego/gosec/v2/cmd/gosec@latest
+        go install golang.org/x/vuln/cmd/govulncheck@latest
 
-    - name: Upload coverage reports
+    - name: Run CI checks
+      run: make ci
+
+    - name: Upload coverage
       uses: codecov/codecov-action@v4
       if: matrix.go-version == '1.22'
       with:
-        files: coverage.out,coverage.integration.out
-        flags: unit,integration
+        files: coverage.out
         fail_ci_if_error: false
 
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
+
     steps:
     - uses: actions/checkout@v4
 
@@ -75,10 +66,11 @@ jobs:
         version: latest
         args: --timeout=5m
 
-  verify-safepath:
-    name: Verify Safepath Usage
+  pre-release:
+    name: Pre-Release Checks
     runs-on: ubuntu-latest
-    
+    if: startsWith(github.ref, 'refs/tags/v')
+
     steps:
     - uses: actions/checkout@v4
 
@@ -87,81 +79,37 @@ jobs:
       with:
         go-version: '1.22'
 
-    - name: Verify safepath usage
-      run: |
-        chmod +x scripts/verify-safepath.sh
-        ./scripts/verify-safepath.sh
-
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
+    - name: Cache Go modules
+      uses: actions/cache@v4
       with:
-        go-version: '1.22'
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-1.22-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-1.22-
 
-    - name: Install security tools
+    - name: Install tools
       run: |
         go install github.com/securego/gosec/v2/cmd/gosec@latest
         go install golang.org/x/vuln/cmd/govulncheck@latest
 
-    - name: Run gosec security scan
-      continue-on-error: true
-      run: |
-        echo "🔒 Running gosec security scanner..."
-        gosec -fmt json -out gosec-report.json ./... || true
-        gosec -fmt sarif -out gosec-report.sarif ./... || true
-        gosec ./... || true
+    - name: Run pre-release checks
+      run: make pre-release
 
-    - name: Run govulncheck vulnerability scan
-      continue-on-error: true
-      run: |
-        echo "🔒 Running govulncheck vulnerability scanner..."
-        govulncheck ./... || true
-
-    - name: Upload gosec results
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: gosec-report.sarif
-        wait_for_processing: false
-
-    - name: Upload gosec JSON report
+    - name: Upload security reports
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: gosec-security-report
-        path: gosec-report.json
-        retention-days: 30
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.22', '1.23']
-    
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ matrix.go-version }}
-
-    - name: Build
-      run: go build ./...
-
-    - name: Build with integration tag
-      run: go build -tags=integration ./...
+        name: security-reports
+        path: |
+          gosec-report.json
+          gosec-report.sarif
+        retention-days: 90
 
   notify:
     name: Slack Notification
-    needs: [test, verify-safepath, security-scan, lint, build]
+    needs: [ci, lint]
     runs-on: ubuntu-latest
     if: always()
     environment: production
@@ -170,19 +118,13 @@ jobs:
     - name: Check job status
       id: check-status
       run: |
-        if [ "${{ needs.test.result }}" != "success" ] || \
-           [ "${{ needs.verify-safepath.result }}" != "success" ] || \
-           [ "${{ needs.security-scan.result }}" != "success" ] || \
-           [ "${{ needs.lint.result }}" != "success" ] || \
-           [ "${{ needs.build.result }}" != "success" ]; then
+        if [ "${{ needs.ci.result }}" != "success" ] || \
+           [ "${{ needs.lint.result }}" != "success" ]; then
           echo "status=failure" >> $GITHUB_OUTPUT
           echo "emoji=❌" >> $GITHUB_OUTPUT
-          echo "color=danger" >> $GITHUB_OUTPUT
-          exit 0
         else
           echo "status=success" >> $GITHUB_OUTPUT
           echo "emoji=✅" >> $GITHUB_OUTPUT
-          echo "color=good" >> $GITHUB_OUTPUT
         fi
 
     - name: Send Slack notification
@@ -200,42 +142,30 @@ jobs:
                 "type": "header",
                 "text": {
                   "type": "plain_text",
-                  "text": "${{ steps.check-status.outputs.emoji }} CI Pipeline ${{ steps.check-status.outputs.status == 'success' && 'Passed' || 'Failed' }}"
+                  "text": "${{ steps.check-status.outputs.emoji }} GoExec CI ${{ steps.check-status.outputs.status == 'success' && 'Passed' || 'Failed' }}"
                 }
               },
               {
                 "type": "section",
                 "fields": [
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Repository:*\n${{ github.repository }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Branch:*\n${{ github.ref_name }}"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Commit:*\n<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>"
-                  },
-                  {
-                    "type": "mrkdwn",
-                    "text": "*Author:*\n${{ github.actor }}"
-                  }
+                  {"type": "mrkdwn", "text": "*Repository:*\n${{ github.repository }}"},
+                  {"type": "mrkdwn", "text": "*Branch:*\n${{ github.ref_name }}"},
+                  {"type": "mrkdwn", "text": "*Commit:*\n`${{ github.sha }}`"},
+                  {"type": "mrkdwn", "text": "*Author:*\n${{ github.actor }}"}
                 ]
               },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*Job Results:*\n• Test: ${{ needs.test.result }}\n• Verify Safepath: ${{ needs.verify-safepath.result }}\n• Security Scan: ${{ needs.security-scan.result }}\n• Lint: ${{ needs.lint.result }}\n• Build: ${{ needs.build.result }}"
+                  "text": "*Results:* CI: ${{ needs.ci.result }} | Lint: ${{ needs.lint.result }}"
                 }
               },
               {
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>"
+                  "text": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
                 }
               }
             ]

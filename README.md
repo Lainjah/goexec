@@ -431,6 +431,89 @@ err := exec.Stream(ctx, cmd, os.Stdout, os.Stderr)
 - Linux (for sandbox features)
 - Binaries must be specified with absolute paths
 
+## Testing
+
+### Unit Tests
+
+Run unit tests:
+```bash
+go test ./...
+```
+
+Or use the Makefile:
+```bash
+make test-unit
+```
+
+### Integration Tests
+
+Integration tests use real system commands and test the complete execution flow. They are tagged with `integration`:
+
+```bash
+go test -tags=integration ./...
+```
+
+Or use the Makefile:
+```bash
+make test-integration
+```
+
+### All Tests
+
+Run both unit and integration tests:
+```bash
+make test-all
+```
+
+### Coverage
+
+Generate coverage reports:
+```bash
+make coverage
+```
+
+This will show coverage for both unit and integration tests.
+
+## CI/CD Pipeline
+
+The project includes a comprehensive CI/CD pipeline that runs on every push and pull request:
+
+### CI Jobs
+
+1. **Test** - Runs unit and integration tests with race detection
+2. **Verify Safepath** - Ensures all file I/O uses `safepath` library instead of standard `os`/`ioutil` packages
+3. **Security Scan** - Runs `gosec` and `govulncheck` to identify security vulnerabilities
+4. **Lint** - Runs `golangci-lint` for code quality checks
+5. **Build** - Builds all packages to verify compilation
+6. **Notify** - Sends notifications on CI status (comments on PRs)
+
+### Local Verification
+
+You can run the same checks locally:
+
+```bash
+# Verify safepath usage
+make verify-safepath
+
+# Run security scans
+make security-scan
+
+# Run all checks
+make test-all
+make verify-safepath
+make security-scan
+make lint
+make build
+```
+
+### Security Scanning
+
+The security scan job uses:
+- **gosec**: Static analysis tool that scans for security vulnerabilities in Go code
+- **govulncheck**: Vulnerability scanner that checks dependencies against known CVEs
+
+Reports are uploaded as artifacts and SARIF files for GitHub's Security tab.
+
 ## Security Features
 
 - **Binary Allowlisting**: Only explicitly allowed binaries can execute

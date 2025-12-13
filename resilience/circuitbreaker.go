@@ -51,20 +51,11 @@ func (s CircuitState) String() string {
 
 // CircuitBreakerConfig configures the circuit breaker.
 type CircuitBreakerConfig struct {
-	// FailureThreshold is the number of failures before opening.
+	OnStateChange    func(binary string, from, to CircuitState)
 	FailureThreshold int
-
-	// SuccessThreshold is the number of successes to close from half-open.
 	SuccessThreshold int
-
-	// Timeout is the duration to wait before transitioning to half-open.
-	Timeout time.Duration
-
-	// PerBinary enables per-binary circuit breakers.
-	PerBinary bool
-
-	// OnStateChange is called when state changes.
-	OnStateChange func(binary string, from, to CircuitState)
+	Timeout          time.Duration
+	PerBinary        bool
 }
 
 // DefaultCircuitBreakerConfig returns default configuration.
@@ -79,19 +70,19 @@ func DefaultCircuitBreakerConfig() CircuitBreakerConfig {
 
 // circuitBreaker implements CircuitBreaker.
 type circuitBreaker struct {
-	config   CircuitBreakerConfig
 	global   *breaker
 	breakers map[string]*breaker
+	config   CircuitBreakerConfig
 	mu       sync.RWMutex
 }
 
 // breaker represents a single circuit breaker.
 type breaker struct {
+	lastFailureTime time.Time
+	config          *CircuitBreakerConfig
 	state           CircuitState
 	failures        int
 	successes       int
-	lastFailureTime time.Time
-	config          *CircuitBreakerConfig
 	mu              sync.Mutex
 }
 

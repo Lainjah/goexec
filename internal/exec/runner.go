@@ -33,50 +33,24 @@ func NewRunner() *Runner {
 
 // RunConfig contains configuration for running a command.
 type RunConfig struct {
-	// Binary is the absolute path to the executable.
-	Binary string
-
-	// Args are the command arguments (excluding the binary name).
-	Args []string
-
-	// Env is the environment variables. If nil, minimalEnv is used.
-	Env []string
-
-	// WorkingDir is the working directory.
-	WorkingDir string
-
-	// Stdin provides input to the command.
-	Stdin io.Reader
-
-	// Stdout receives standard output. If nil, output is captured.
-	Stdout io.Writer
-
-	// Stderr receives standard error. If nil, output is captured.
-	Stderr io.Writer
-
-	// SysProcAttr contains OS-specific process attributes.
+	Stdin       io.Reader
+	Stdout      io.Writer
+	Stderr      io.Writer
 	SysProcAttr *syscall.SysProcAttr
+	Binary      string
+	WorkingDir  string
+	Args        []string
+	Env         []string
 }
 
 // RunResult contains the result of command execution.
 type RunResult struct {
-	// ExitCode is the process exit code.
-	ExitCode int
-
-	// Signal is the signal that terminated the process, if any.
-	Signal syscall.Signal
-
-	// Stdout contains captured standard output (if not streaming).
-	Stdout []byte
-
-	// Stderr contains captured standard error (if not streaming).
-	Stderr []byte
-
-	// Duration is the wall clock time of execution.
-	Duration time.Duration
-
-	// ProcessState contains the OS process state.
 	ProcessState *ProcessState
+	Stdout       []byte
+	Stderr       []byte
+	ExitCode     int
+	Signal       syscall.Signal
+	Duration     time.Duration
 }
 
 // ProcessState contains OS-level process information.

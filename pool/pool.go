@@ -18,14 +18,9 @@ var (
 
 // Task represents a unit of work for the pool.
 type Task struct {
-	// Fn is the function to execute.
-	Fn func()
-
-	// Priority affects scheduling order.
-	Priority int
-
-	// SubmittedAt is when the task was submitted.
 	SubmittedAt time.Time
+	Fn          func()
+	Priority    int
 }
 
 // Pool manages a bounded pool of workers.
@@ -103,14 +98,14 @@ type Stats struct {
 
 // pool is the concrete implementation.
 type pool struct {
-	config     Config
 	taskQueue  chan Task
-	workers    []*worker
-	workersMu  sync.RWMutex
 	stats      *stats
 	shutdownCh chan struct{}
-	shutdown   int32
+	workers    []*worker
+	config     Config
 	wg         sync.WaitGroup
+	workersMu  sync.RWMutex
+	shutdown   int32
 }
 
 // stats tracks pool statistics.
@@ -338,9 +333,9 @@ func (p *pool) Shutdown(ctx context.Context) error {
 
 // worker represents a pool worker.
 type worker struct {
-	id   int
 	pool *pool
 	stop chan struct{}
+	id   int
 }
 
 func (p *pool) startWorker() {

@@ -23,26 +23,16 @@ const (
 
 // SeccompProfile defines a seccomp-bpf filter.
 type SeccompProfile struct {
-	// Name is the profile name.
-	Name string
-
-	// DefaultAction is the default action for unlisted syscalls.
+	Name          string
+	Syscalls      []SyscallRule
 	DefaultAction SeccompAction
-
-	// Syscalls are the syscall rules.
-	Syscalls []SyscallRule
 }
 
 // SyscallRule defines a rule for syscalls.
 type SyscallRule struct {
-	// Names are the syscall names.
-	Names []string
-
-	// Action is the action to take.
+	Names  []string
+	Args   []SyscallArg
 	Action SeccompAction
-
-	// Args are argument filters.
-	Args []SyscallArg
 }
 
 // SyscallArg defines an argument filter for a syscall.

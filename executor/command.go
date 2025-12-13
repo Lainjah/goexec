@@ -11,37 +11,16 @@ import (
 // Command represents a command to be executed.
 // Commands are immutable once built.
 type Command struct {
-	// Binary is the absolute path to the executable.
-	Binary string
-
-	// Args are the command arguments (excluding the binary name).
-	Args []string
-
-	// Env is the environment variables for the command.
-	// If nil, a minimal safe environment is used.
-	Env map[string]string
-
-	// WorkingDir is the working directory for the command.
-	WorkingDir string
-
-	// Timeout is the maximum execution time.
-	// If zero, the context deadline is used.
-	Timeout time.Duration
-
-	// Stdin provides input to the command.
-	Stdin io.Reader
-
-	// ResourceLimits configures resource constraints.
+	Stdin          io.Reader
+	Env            map[string]string
 	ResourceLimits *ResourceLimits
-
-	// SandboxProfile specifies the sandbox configuration name.
+	Metadata       map[string]string
+	Binary         string
+	WorkingDir     string
 	SandboxProfile string
-
-	// Metadata contains arbitrary key-value pairs for tracing/logging.
-	Metadata map[string]string
-
-	// Priority affects scheduling in the worker pool.
-	Priority Priority
+	Args           []string
+	Timeout        time.Duration
+	Priority       Priority
 }
 
 // ResourceLimits defines resource constraints for command execution.

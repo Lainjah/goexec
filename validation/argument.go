@@ -11,24 +11,17 @@ import (
 
 // ArgumentValidatorConfig configures the argument validator.
 type ArgumentValidatorConfig struct {
-	// MaxArgs is the maximum number of arguments allowed.
-	MaxArgs int
-
-	// MaxArgLength is the maximum length of a single argument.
-	MaxArgLength int
-
-	// DeniedPatterns are regex patterns that are always denied.
-	DeniedPatterns []string
-
-	// AllowShellMetachars allows shell metacharacters in arguments.
+	DeniedPatterns      []string
+	MaxArgs             int
+	MaxArgLength        int
 	AllowShellMetachars bool
 }
 
 // ArgumentValidator validates command arguments.
 type ArgumentValidator struct {
 	config         *ArgumentValidatorConfig
-	deniedRegexps  []*regexp.Regexp
 	shellMetachars string
+	deniedRegexps  []*regexp.Regexp
 }
 
 // NewArgumentValidator creates a new argument validator.
@@ -184,20 +177,11 @@ func isShellSafe(c rune) bool {
 
 // ArgPattern defines a pattern for argument validation.
 type ArgPattern struct {
-	// Pattern is the regex pattern to match.
-	Pattern string
-
-	// Description describes what this pattern allows.
+	compiled    *regexp.Regexp
+	Pattern     string
 	Description string
-
-	// Required indicates if this argument is required.
-	Required bool
-
-	// Position is the expected position (-1 for any).
-	Position int
-
-	// compiled is the compiled regex.
-	compiled *regexp.Regexp
+	Position    int
+	Required    bool
 }
 
 // Compile compiles the argument pattern.

@@ -14,15 +14,15 @@ import (
 
 // Loader loads and manages policies from YAML files.
 type Loader struct {
-	path       string
+	lastLoad   time.Time
 	safePath   *safepath.SafePath
 	policy     *CompiledPolicy
-	mu         sync.RWMutex
+	watchStop  chan struct{}
+	path       string
 	lastHash   []byte
-	lastLoad   time.Time
 	validators []Validator
 	onChange   []func(*CompiledPolicy)
-	watchStop  chan struct{}
+	mu         sync.RWMutex
 }
 
 // Validator validates a policy configuration.

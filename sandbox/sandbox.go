@@ -38,41 +38,18 @@ type Features struct {
 
 // Config contains the sandbox configuration for a process.
 type Config struct {
-	// SeccompProfile is the seccomp filter profile.
-	SeccompProfile *SeccompProfile
-
-	// AppArmorProfile is the AppArmor profile name.
+	SeccompProfile  *SeccompProfile
+	Namespaces      *NamespaceConfig
+	cgroup          *Cgroup
 	AppArmorProfile string
-
-	// CgroupPath is the cgroup path.
-	CgroupPath string
-
-	// Rlimits are the resource limits.
-	Rlimits []Rlimit
-
-	// Namespaces is the namespace configuration.
-	Namespaces *NamespaceConfig
-
-	// UID is the user ID for privilege dropping.
-	UID int
-
-	// GID is the group ID for privilege dropping.
-	GID int
-
-	// DropCaps are capabilities to drop.
-	DropCaps []string
-
-	// ReadOnlyPaths are paths that should be read-only.
-	ReadOnlyPaths []string
-
-	// MaskedPaths are paths that should be hidden.
-	MaskedPaths []string
-
-	// TmpfsMounts are tmpfs mounts.
-	TmpfsMounts []TmpfsMount
-
-	// cgroup is the cgroup instance (if created).
-	cgroup *Cgroup
+	CgroupPath      string
+	Rlimits         []Rlimit
+	DropCaps        []string
+	ReadOnlyPaths   []string
+	MaskedPaths     []string
+	TmpfsMounts     []TmpfsMount
+	UID             int
+	GID             int
 }
 
 // NamespaceConfig configures Linux namespaces.

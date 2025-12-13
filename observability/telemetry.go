@@ -63,23 +63,12 @@ func WithSpanKind(kind trace.SpanKind) SpanOption {
 
 // TelemetryConfig configures telemetry.
 type TelemetryConfig struct {
-	// ServiceName is the service name for tracing.
-	ServiceName string
-
-	// ServiceVersion is the service version.
+	ServiceName    string
 	ServiceVersion string
-
-	// Environment is the deployment environment.
-	Environment string
-
-	// EnableTracing enables distributed tracing.
-	EnableTracing bool
-
-	// EnableMetrics enables metrics collection.
-	EnableMetrics bool
-
-	// MetricsPrefix is the prefix for all metrics.
-	MetricsPrefix string
+	Environment    string
+	MetricsPrefix  string
+	EnableTracing  bool
+	EnableMetrics  bool
 }
 
 // DefaultTelemetryConfig returns default configuration.
@@ -96,16 +85,14 @@ func DefaultTelemetryConfig() TelemetryConfig {
 
 // telemetry implements Telemetry.
 type telemetry struct {
-	config TelemetryConfig
-	tracer trace.Tracer
-	meter  metric.Meter
-
-	// Metrics
+	tracer              trace.Tracer
+	meter               metric.Meter
 	executionCounter    metric.Int64Counter
 	executionDuration   metric.Float64Histogram
 	activeExecutions    metric.Int64UpDownCounter
 	errorCounter        metric.Int64Counter
 	policyDeniedCounter metric.Int64Counter
+	config              TelemetryConfig
 }
 
 // NewTelemetry creates a new telemetry instance.

@@ -7,10 +7,10 @@ import (
 
 // PriorityQueue implements a thread-safe priority queue for tasks.
 type PriorityQueue struct {
-	mu    sync.Mutex
 	cond  *sync.Cond
 	items taskHeap
 	cap   int
+	mu    sync.Mutex
 }
 
 // NewPriorityQueue creates a new priority queue.

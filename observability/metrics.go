@@ -10,42 +10,35 @@ import (
 
 // Metrics provides execution metrics.
 type Metrics struct {
-	// Execution counts
-	totalExecutions    int64
-	successfulExec     int64
-	failedExec         int64
+	binaryStats        map[string]*BinaryStats
+	totalDuration      int64
+	minDuration        int64
 	timeoutExec        int64
 	policyDenied       int64
 	sandboxViolations  int64
 	rateLimited        int64
+	failedExec         int64
 	circuitBreakerOpen int64
-
-	// Duration tracking
-	totalDuration int64 // nanoseconds
-	durationCount int64
-	minDuration   int64
-	maxDuration   int64
-
-	// Resource usage
-	totalCPUTime    int64
-	totalMemoryPeak int64
-	memoryCount     int64
-
-	// Per-binary stats
-	binaryStats map[string]*BinaryStats
-	mu          sync.RWMutex
+	durationCount      int64
+	totalExecutions    int64
+	maxDuration        int64
+	totalCPUTime       int64
+	totalMemoryPeak    int64
+	memoryCount        int64
+	successfulExec     int64
+	mu                 sync.RWMutex
 }
 
 // BinaryStats contains per-binary statistics.
 type BinaryStats struct {
+	LastExecutionAt time.Time
 	Binary          string
+	LastStatus      string
 	TotalExecutions int64
 	SuccessfulExec  int64
 	FailedExec      int64
 	TotalDuration   int64
 	AvgDuration     int64
-	LastExecutionAt time.Time
-	LastStatus      string
 }
 
 // NewMetrics creates a new metrics collector.
@@ -171,20 +164,20 @@ func (m *Metrics) Snapshot() MetricsSnapshot {
 
 // MetricsSnapshot is a point-in-time snapshot of metrics.
 type MetricsSnapshot struct {
-	TotalExecutions    int64
-	SuccessfulExec     int64
+	BinaryStats        map[string]*BinaryStats
+	RateLimited        int64
 	FailedExec         int64
 	TimeoutExec        int64
 	PolicyDenied       int64
 	SandboxViolations  int64
-	RateLimited        int64
+	TotalExecutions    int64
 	CircuitBreakerOpen int64
 	AvgDuration        time.Duration
 	MinDuration        time.Duration
 	MaxDuration        time.Duration
 	AvgCPUTime         time.Duration
 	AvgMemoryPeak      int64
-	BinaryStats        map[string]*BinaryStats
+	SuccessfulExec     int64
 }
 
 // SuccessRate returns the success rate as a percentage.

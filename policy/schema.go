@@ -7,14 +7,14 @@ import (
 
 // Config represents the YAML policy structure.
 type Config struct {
-	Version         string                   `yaml:"version"`
-	Metadata        Metadata                 `yaml:"metadata"`
-	Global          GlobalConfig             `yaml:"global"`
-	Binaries        []BinaryConfig           `yaml:"binaries"`
 	SandboxProfiles map[string]SandboxConfig `yaml:"sandbox_profiles"`
-	Audit           AuditConfig              `yaml:"audit"`
-	CircuitBreaker  CircuitBreakerConfig     `yaml:"circuit_breaker"`
+	Metadata        Metadata                 `yaml:"metadata"`
+	Version         string                   `yaml:"version"`
+	Binaries        []BinaryConfig           `yaml:"binaries"`
 	Alerts          AlertConfig              `yaml:"alerts"`
+	Audit           AuditConfig              `yaml:"audit"`
+	Global          GlobalConfig             `yaml:"global"`
+	CircuitBreaker  CircuitBreakerConfig     `yaml:"circuit_breaker"`
 }
 
 // Metadata contains policy metadata.
@@ -27,11 +27,11 @@ type Metadata struct {
 
 // GlobalConfig contains global settings.
 type GlobalConfig struct {
-	DefaultSandbox string           `yaml:"default_sandbox"`
-	DefaultLimits  ResourceConfig   `yaml:"default_limits"`
 	RateLimit      *RateLimitConfig `yaml:"rate_limit"`
+	DefaultSandbox string           `yaml:"default_sandbox"`
 	AllowedEnv     []string         `yaml:"allowed_env"`
 	DeniedEnv      []string         `yaml:"denied_env"`
+	DefaultLimits  ResourceConfig   `yaml:"default_limits"`
 }
 
 // ResourceConfig contains resource limit settings.
@@ -46,30 +46,30 @@ type ResourceConfig struct {
 
 // BinaryConfig defines configuration for a binary.
 type BinaryConfig struct {
+	Limits          *ResourceConfig  `yaml:"limits"`
+	RateLimit       *RateLimitConfig `yaml:"rate_limit"`
 	Path            string           `yaml:"path"`
-	Enabled         bool             `yaml:"enabled"`
+	Sandbox         string           `yaml:"sandbox"`
 	AllowedArgs     []ArgPattern     `yaml:"allowed_args"`
 	DeniedArgs      []ArgPattern     `yaml:"denied_args"`
 	AllowedEnv      []string         `yaml:"allowed_env"`
 	DeniedEnv       []string         `yaml:"denied_env"`
-	Limits          *ResourceConfig  `yaml:"limits"`
-	RateLimit       *RateLimitConfig `yaml:"rate_limit"`
-	Sandbox         string           `yaml:"sandbox"`
-	RequireAudit    bool             `yaml:"require_audit"`
-	MaxInstances    int              `yaml:"max_instances"`
 	AllowedWorkdirs []string         `yaml:"allowed_workdirs"`
+	MaxInstances    int              `yaml:"max_instances"`
+	Enabled         bool             `yaml:"enabled"`
+	RequireAudit    bool             `yaml:"require_audit"`
 }
 
 // SandboxConfig defines a sandbox profile.
 type SandboxConfig struct {
-	Inherit      string              `yaml:"inherit"`
 	Seccomp      *SeccompConfig      `yaml:"seccomp"`
-	AppArmor     string              `yaml:"apparmor_profile"`
 	Capabilities *CapabilitiesConfig `yaml:"capabilities"`
 	Cgroup       *CgroupConfig       `yaml:"cgroup"`
 	Namespaces   *NamespaceConfig    `yaml:"namespaces"`
 	Filesystem   *FilesystemConfig   `yaml:"filesystem"`
 	Network      *NetworkConfig      `yaml:"network"`
+	Inherit      string              `yaml:"inherit"`
+	AppArmor     string              `yaml:"apparmor_profile"`
 }
 
 // SeccompConfig defines seccomp settings.
@@ -112,18 +112,18 @@ type FilesystemConfig struct {
 
 // NetworkConfig defines network restrictions.
 type NetworkConfig struct {
-	AllowOutbound bool     `yaml:"allow_outbound"`
 	AllowedHosts  []string `yaml:"allowed_hosts"`
 	AllowedPorts  []int    `yaml:"allowed_ports"`
+	AllowOutbound bool     `yaml:"allow_outbound"`
 }
 
 // AuditConfig defines audit settings.
 type AuditConfig struct {
-	Enabled         bool               `yaml:"enabled"`
 	LogLevel        string             `yaml:"log_level"`
-	IncludeOutput   bool               `yaml:"include_output"`
-	MaxOutputLogged ByteSize           `yaml:"max_output_logged"`
 	Destinations    []AuditDestination `yaml:"destinations"`
+	MaxOutputLogged ByteSize           `yaml:"max_output_logged"`
+	Enabled         bool               `yaml:"enabled"`
+	IncludeOutput   bool               `yaml:"include_output"`
 }
 
 // AuditDestination defines an audit log destination.
@@ -144,17 +144,17 @@ type RotationConfig struct {
 
 // CircuitBreakerConfig defines circuit breaker settings.
 type CircuitBreakerConfig struct {
-	Enabled          bool     `yaml:"enabled"`
 	FailureThreshold int      `yaml:"failure_threshold"`
 	SuccessThreshold int      `yaml:"success_threshold"`
 	Timeout          Duration `yaml:"timeout"`
+	Enabled          bool     `yaml:"enabled"`
 	PerBinary        bool     `yaml:"per_binary"`
 }
 
 // AlertConfig defines alert settings.
 type AlertConfig struct {
-	Enabled  bool           `yaml:"enabled"`
 	Channels []AlertChannel `yaml:"channels"`
+	Enabled  bool           `yaml:"enabled"`
 }
 
 // AlertChannel defines an alert channel.

@@ -25,56 +25,23 @@ type AuditLogger interface {
 
 // AuditEvent represents an audit log entry.
 type AuditEvent struct {
-	// ID is a unique identifier for this event.
-	ID string `json:"id"`
-
-	// Timestamp is when the event occurred.
-	Timestamp time.Time `json:"timestamp"`
-
-	// Type is the event type.
-	Type AuditEventType `json:"type"`
-
-	// Binary is the command binary.
-	Binary string `json:"binary"`
-
-	// Args are the command arguments.
-	Args []string `json:"args"`
-
-	// WorkingDir is the working directory.
-	WorkingDir string `json:"working_dir,omitempty"`
-
-	// User is the user who initiated the command.
-	User string `json:"user,omitempty"`
-
-	// Status is the execution status.
-	Status string `json:"status"`
-
-	// ExitCode is the exit code.
-	ExitCode int `json:"exit_code"`
-
-	// Duration is the execution duration.
-	Duration time.Duration `json:"duration"`
-
-	// Error is the error message if any.
-	Error string `json:"error,omitempty"`
-
-	// Output contains truncated output if configured.
-	Output string `json:"output,omitempty"`
-
-	// Metadata contains additional metadata.
-	Metadata map[string]string `json:"metadata,omitempty"`
-
-	// TraceID is the trace ID for correlation.
-	TraceID string `json:"trace_id,omitempty"`
-
-	// PolicyVersion is the policy version used.
-	PolicyVersion string `json:"policy_version,omitempty"`
-
-	// SandboxProfile is the sandbox profile used.
-	SandboxProfile string `json:"sandbox_profile,omitempty"`
-
-	// ResourceUsage contains resource usage metrics.
-	ResourceUsage *AuditResourceUsage `json:"resource_usage,omitempty"`
+	Timestamp      time.Time           `json:"timestamp"`
+	ResourceUsage  *AuditResourceUsage `json:"resource_usage,omitempty"`
+	Metadata       map[string]string   `json:"metadata,omitempty"`
+	User           string              `json:"user,omitempty"`
+	ID             string              `json:"id"`
+	WorkingDir     string              `json:"working_dir,omitempty"`
+	PolicyVersion  string              `json:"policy_version,omitempty"`
+	Status         string              `json:"status"`
+	Binary         string              `json:"binary"`
+	SandboxProfile string              `json:"sandbox_profile,omitempty"`
+	Error          string              `json:"error,omitempty"`
+	Output         string              `json:"output,omitempty"`
+	Type           AuditEventType      `json:"type"`
+	TraceID        string              `json:"trace_id,omitempty"`
+	Args           []string            `json:"args"`
+	Duration       time.Duration       `json:"duration"`
+	ExitCode       int                 `json:"exit_code"`
 }
 
 // AuditEventType represents the type of audit event.
@@ -128,29 +95,14 @@ type AuditFilter struct {
 
 // AuditConfig configures the audit logger.
 type AuditConfig struct {
-	// Enabled enables audit logging.
-	Enabled bool
-
-	// LogLevel determines what to log.
-	LogLevel AuditLogLevel
-
-	// IncludeOutput includes command output in logs.
-	IncludeOutput bool
-
-	// MaxOutputSize is the maximum output size to log.
+	LogLevel      AuditLogLevel
+	BasePath      string
+	FilePath      string
 	MaxOutputSize int
-
-	// BasePath is the base path for the file logger.
-	BasePath string
-
-	// FilePath is the audit log file path (relative to BasePath).
-	FilePath string
-
-	// RotateSize is the file size for rotation.
-	RotateSize int64
-
-	// RotateCount is the number of rotated files to keep.
-	RotateCount int
+	RotateSize    int64
+	RotateCount   int
+	Enabled       bool
+	IncludeOutput bool
 }
 
 // AuditLogLevel determines what events to log.
@@ -183,8 +135,8 @@ func DefaultAuditConfig() AuditConfig {
 
 // fileAuditLogger implements AuditLogger using gowritter.
 type fileAuditLogger struct {
-	config   AuditConfig
 	safePath *safepath.SafePath
+	config   AuditConfig
 	mu       sync.Mutex
 }
 

@@ -12,10 +12,10 @@ import (
 
 // CgroupManager manages cgroup v1/v2 resource limits.
 type CgroupManager struct {
-	version   int
+	fs        *safepath.SafePath
 	basePath  string
 	namespace string
-	fs        *safepath.SafePath
+	version   int
 }
 
 // CgroupLimits defines resource limits for a cgroup.
@@ -41,10 +41,10 @@ type CgroupLimits struct {
 
 // Cgroup represents a cgroup instance.
 type Cgroup struct {
+	fs      *safepath.SafePath
 	path    string
 	relPath string
 	version int
-	fs      *safepath.SafePath
 }
 
 // NewCgroupManager creates a new cgroup manager.

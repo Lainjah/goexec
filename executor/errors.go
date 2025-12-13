@@ -129,9 +129,9 @@ func (e *ExecutionError) Is(target error) bool {
 
 // PolicyViolationError contains details about policy violations.
 type PolicyViolationError struct {
-	ExecutionError
-	Violations    []Violation
 	PolicyVersion string
+	ExecutionError
+	Violations []Violation
 }
 
 // Violation describes a specific policy violation.
@@ -177,12 +177,9 @@ func (s Severity) String() string {
 
 // ResourceExceededError contains details about resource limit violations.
 type ResourceExceededError struct {
-	ExecutionError
-	// Resource is the resource that was exceeded.
 	Resource string
-	// Limit is the configured limit.
-	Limit int64
-	// Actual is the actual usage.
+	ExecutionError
+	Limit  int64
 	Actual int64
 }
 

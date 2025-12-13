@@ -147,10 +147,6 @@ const (
 // PolicyLoader loads and manages policies from YAML files.
 type PolicyLoader = policy.Loader
 
-// PolicyConfig represents a loaded policy configuration.
-// Deprecated: Use policy.Config instead.
-type PolicyConfig = policy.Config
-
 // CompiledPolicy is a compiled and ready-to-use policy.
 type CompiledPolicy = policy.CompiledPolicy
 
@@ -312,12 +308,6 @@ func LoadPolicyFromPath(path string) (*PolicyLoader, error) {
 	dir := filepath.Dir(path)
 	file := filepath.Base(path)
 	return policy.NewLoader(dir, file)
-}
-
-// ExamplePolicy returns an example policy configuration.
-// Use this as a starting point for creating your own policies.
-func ExamplePolicy() *PolicyConfig {
-	return policy.ExamplePolicy()
 }
 
 // =============================================================================

@@ -28,70 +28,36 @@ type Policy interface {
 
 // ValidationResult contains the outcome of policy validation.
 type ValidationResult struct {
-	Allowed        bool
 	Reason         string
 	Violations     []executor.Violation
 	SuggestedFixes []string
+	Allowed        bool
 }
 
 // BinaryPolicy defines rules for a specific binary.
 type BinaryPolicy struct {
-	// Path is the absolute path to the binary.
-	Path string
-
-	// Enabled indicates if this binary is allowed.
-	Enabled bool
-
-	// AllowedArgs are patterns for allowed arguments.
-	AllowedArgs []ArgPattern
-
-	// DeniedArgs are patterns for denied arguments.
-	DeniedArgs []ArgPattern
-
-	// AllowedEnv are environment variables allowed for this binary.
-	AllowedEnv []string
-
-	// DeniedEnv are environment variables denied for this binary.
-	DeniedEnv []string
-
-	// ResourceLimits are resource limits for this binary.
-	ResourceLimits *executor.ResourceLimits
-
-	// SandboxProfile is the sandbox profile name.
-	SandboxProfile string
-
-	// RateLimit is the rate limit configuration.
-	RateLimit *RateLimitConfig
-
-	// RequireAudit indicates if audit logging is required.
-	RequireAudit bool
-
-	// MaxInstances is the maximum concurrent instances.
-	MaxInstances int
-
-	// AllowedWorkdirs are allowed working directories.
+	ResourceLimits  *executor.ResourceLimits
+	RateLimit       *RateLimitConfig
+	SandboxProfile  string
+	Path            string
+	DeniedArgs      []ArgPattern
+	DeniedEnv       []string
+	AllowedEnv      []string
+	AllowedArgs     []ArgPattern
 	AllowedWorkdirs []string
-
-	// compiledAllowed are compiled allowed arg patterns.
 	compiledAllowed []*regexp.Regexp
-
-	// compiledDenied are compiled denied arg patterns.
-	compiledDenied []*regexp.Regexp
+	compiledDenied  []*regexp.Regexp
+	MaxInstances    int
+	Enabled         bool
+	RequireAudit    bool
 }
 
 // ArgPattern defines a pattern for argument validation.
 type ArgPattern struct {
-	// Pattern is the regex pattern.
-	Pattern string `yaml:"pattern"`
-
-	// Position is the expected position (-1 for any).
-	Position int `yaml:"position"`
-
-	// Description describes what this pattern allows.
+	Pattern     string `yaml:"pattern"`
 	Description string `yaml:"description"`
-
-	// Required indicates if this argument is required.
-	Required bool `yaml:"required"`
+	Position    int    `yaml:"position"`
+	Required    bool   `yaml:"required"`
 }
 
 // RateLimitConfig defines rate limiting parameters.
@@ -105,11 +71,11 @@ type RateLimitConfig struct {
 
 // CompiledPolicy is a validated, optimized policy ready for use.
 type CompiledPolicy struct {
+	loadedAt    time.Time
 	raw         *Config
+	binaryIndex map[string]*BinaryPolicy
 	version     string
 	hash        string
-	binaryIndex map[string]*BinaryPolicy
-	loadedAt    time.Time
 	mu          sync.RWMutex
 }
 

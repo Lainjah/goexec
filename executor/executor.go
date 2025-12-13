@@ -39,9 +39,9 @@ type Policy interface {
 
 // ValidationResult contains the outcome of policy validation.
 type ValidationResult struct {
-	Allowed    bool
 	Reason     string
 	Violations []Violation
+	Allowed    bool
 }
 
 // Sandbox provides process isolation.
@@ -98,18 +98,17 @@ type Telemetry interface {
 
 // executor is the default implementation.
 type executor struct {
-	runner         *internalexec.Runner
 	policy         Policy
 	sandbox        Sandbox
 	pool           WorkerPool
 	rateLimiter    RateLimiter
 	circuitBreaker CircuitBreaker
-	hooks          []Hook
 	telemetry      Telemetry
+	runner         *internalexec.Runner
+	hooks          []Hook
+	wg             sync.WaitGroup
 	defaultTimeout time.Duration
-
-	shutdown int32
-	wg       sync.WaitGroup
+	shutdown       int32
 }
 
 // Builder creates configured Executor instances.
@@ -119,8 +118,8 @@ type Builder struct {
 	pool           WorkerPool
 	rateLimiter    RateLimiter
 	circuitBreaker CircuitBreaker
-	hooks          []Hook
 	telemetry      Telemetry
+	hooks          []Hook
 	defaultTimeout time.Duration
 }
 

@@ -23,17 +23,10 @@ type RateLimiter interface {
 
 // RateLimiterConfig configures the rate limiter.
 type RateLimiterConfig struct {
-	// DefaultLimit is the default requests per second.
-	DefaultLimit float64
-
-	// DefaultBurst is the default burst size.
-	DefaultBurst int
-
-	// PerBinary enables per-binary rate limiting.
-	PerBinary bool
-
-	// BinaryLimits contains per-binary rate limits.
 	BinaryLimits map[string]BinaryLimit
+	DefaultLimit float64
+	DefaultBurst int
+	PerBinary    bool
 }
 
 // BinaryLimit defines rate limit for a specific binary.
@@ -54,9 +47,9 @@ func DefaultRateLimiterConfig() RateLimiterConfig {
 
 // rateLimiter implements RateLimiter.
 type rateLimiter struct {
-	config         RateLimiterConfig
 	globalLimiter  *rate.Limiter
 	binaryLimiters map[string]*rate.Limiter
+	config         RateLimiterConfig
 	mu             sync.RWMutex
 }
 
@@ -134,10 +127,10 @@ func (rl *rateLimiter) getLimiter(binary string) *rate.Limiter {
 
 // TokenBucket implements a simple token bucket rate limiter.
 type TokenBucket struct {
+	lastRefill time.Time
 	tokens     float64
 	capacity   float64
 	refillRate float64
-	lastRefill time.Time
 	mu         sync.Mutex
 }
 

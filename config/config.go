@@ -11,53 +11,25 @@ import (
 
 // Config is the main configuration for goexec.
 type Config struct {
-	// Executor configuration
-	Executor ExecutorConfig
-
-	// Pool configuration
-	Pool pool.Config
-
-	// RateLimiter configuration
-	RateLimiter resilience.RateLimiterConfig
-
-	// CircuitBreaker configuration
 	CircuitBreaker resilience.CircuitBreakerConfig
-
-	// Telemetry configuration
-	Telemetry observability.TelemetryConfig
-
-	// Audit configuration
-	Audit observability.AuditConfig
-
-	// Policy file path
-	PolicyPath string
-
-	// Policy base path for gowritter
+	RateLimiter    resilience.RateLimiterConfig
+	Telemetry      observability.TelemetryConfig
+	PolicyPath     string
 	PolicyBasePath string
+	Executor       ExecutorConfig
+	Audit          observability.AuditConfig
+	Pool           pool.Config
 }
 
 // ExecutorConfig configures the executor.
 type ExecutorConfig struct {
-	// DefaultTimeout is the default execution timeout.
-	DefaultTimeout time.Duration
-
-	// MaxConcurrent is the maximum concurrent executions.
-	MaxConcurrent int
-
-	// EnableSandbox enables sandboxing.
-	EnableSandbox bool
-
-	// DefaultSandboxProfile is the default sandbox profile.
 	DefaultSandboxProfile string
-
-	// EnableMetrics enables metrics collection.
-	EnableMetrics bool
-
-	// EnableTracing enables distributed tracing.
-	EnableTracing bool
-
-	// EnableAudit enables audit logging.
-	EnableAudit bool
+	DefaultTimeout        time.Duration
+	MaxConcurrent         int
+	EnableSandbox         bool
+	EnableMetrics         bool
+	EnableTracing         bool
+	EnableAudit           bool
 }
 
 // DefaultConfig returns the default configuration.

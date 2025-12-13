@@ -6,39 +6,17 @@ import (
 
 // Result contains the outcome of command execution.
 type Result struct {
-	// Status indicates the execution outcome.
-	Status ExitStatus
-
-	// ExitCode is the process exit code (0 for success).
-	ExitCode int
-
-	// Signal is the signal that terminated the process, if any.
-	Signal string
-
-	// Stdout contains captured standard output.
-	// Empty if streaming was used.
-	Stdout []byte
-
-	// Stderr contains captured standard error.
-	Stderr []byte
-
-	// Duration is the wall clock time of execution.
-	Duration time.Duration
-
-	// CPUTime is the CPU time consumed.
-	CPUTime time.Duration
-
-	// MemoryPeak is the peak memory usage in bytes.
-	MemoryPeak int64
-
-	// ResourceUsage contains detailed resource metrics.
 	ResourceUsage *ResourceUsage
-
-	// TraceID is the OpenTelemetry trace ID for this execution.
-	TraceID string
-
-	// CommandID is a unique identifier for this execution.
-	CommandID string
+	Signal        string
+	TraceID       string
+	CommandID     string
+	Stdout        []byte
+	Stderr        []byte
+	Status        ExitStatus
+	ExitCode      int
+	Duration      time.Duration
+	CPUTime       time.Duration
+	MemoryPeak    int64
 }
 
 // ExitStatus represents the outcome of command execution.

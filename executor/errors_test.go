@@ -221,7 +221,7 @@ func TestExecutionError_Is(t *testing.T) {
 }
 
 func TestIsRetryable(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		name      string
 		err       error
 		retryable bool
@@ -271,7 +271,7 @@ func TestGetErrorCode(t *testing.T) {
 }
 
 func TestSeverity_String(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		severity Severity
 		want     string
 	}{

@@ -196,7 +196,7 @@ func TestCircuitBreaker_Reset(t *testing.T) {
 }
 
 func TestCircuitBreaker_StateString(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		state CircuitState
 		want  string
 	}{

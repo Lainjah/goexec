@@ -11,7 +11,7 @@ import (
 )
 
 // mockValidator is a mock validator for testing.
-type mockValidator struct { // nolint: govet // Test struct field order doesn't matter
+type mockValidator struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 	name         string
 	priority     int
 	validateFunc func(ctx context.Context, cmd *executor.Command) error

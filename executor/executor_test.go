@@ -67,7 +67,7 @@ func (m *mockRateLimiter) Wait(ctx context.Context, binary string) error {
 	return nil
 }
 
-// mockCircuitBreaker is a mock circuit breaker
+// mockCircuitBreaker is a mock circuit breaker.
 type mockCircuitBreaker struct {
 	allowFunc         func(binary string) bool
 	recordSuccessFunc func(binary string)
@@ -93,7 +93,7 @@ func (m *mockCircuitBreaker) RecordFailure(binary string) {
 	}
 }
 
-// mockTelemetry is a mock telemetry implementation
+// mockTelemetry is a mock telemetry implementation.
 type mockTelemetry struct {
 	startSpanFunc    func(ctx context.Context, name string) (context.Context, func())
 	recordMetricFunc func(name string, value float64, labels map[string]string)
@@ -473,8 +473,7 @@ func TestExecutor_Shutdown(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var err error
-	err = exec.Shutdown(ctx)
+	err := exec.Shutdown(ctx)
 	if err != nil {
 		t.Errorf("Shutdown failed: %v", err)
 	}

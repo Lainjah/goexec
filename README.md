@@ -427,7 +427,7 @@ err := exec.Stream(ctx, cmd, os.Stdout, os.Stderr)
 
 ## Requirements
 
-- Go 1.22 or later
+- Go 1.23 or later
 - Linux (for sandbox features)
 - Binaries must be specified with absolute paths
 

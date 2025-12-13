@@ -64,7 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Requirements
 
-- Go 1.22 or later
+- Go 1.23 or later
 - Linux (for sandbox features)
 
 [0.1.0]: https://github.com/victoralfred/goexec/releases/tag/v0.1.0

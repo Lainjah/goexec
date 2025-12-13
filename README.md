@@ -307,6 +307,63 @@ if err := goexec.ValidateArguments(args); err != nil {
 }
 ```
 
+## Environment Management
+
+GoExec automatically provides a minimal safe environment for all executed commands, ensuring security by default while allowing customization when needed.
+
+### Automatic Environment Merging
+
+When you execute a command, GoExec automatically:
+
+1. **Provides a minimal safe base environment** with essential variables:
+   - `PATH=/usr/bin:/bin` - Restricted PATH to prevent command injection
+   - `LANG=C.UTF-8` - UTF-8 locale settings
+   - `LC_ALL=C.UTF-8` - Consistent locale behavior
+   - `HOME=/tmp` - Safe home directory
+   - `USER=nobody` - Non-privileged user
+
+2. **Merges your custom environment variables** on top of the minimal base:
+
+   ```go
+   cmd, _ := goexec.Cmd("/usr/bin/env").
+       WithEnv("MY_VAR", "my_value").
+       WithEnv("PATH", "/custom/path:/usr/bin").
+       Build()
+   
+   // Executor automatically:
+   // 1. Starts with minimal safe environment
+   // 2. Merges your custom variables (MY_VAR, PATH)
+   // 3. Your PATH override takes precedence over minimal PATH
+   result, _ := exec.Execute(ctx, cmd)
+   ```
+
+### Environment Utility Functions
+
+For advanced use cases, you can use the environment utility functions directly:
+
+```go
+import "github.com/victoralfred/goexec/internal/envutil"
+
+// Get minimal safe environment
+minimalEnv := envutil.MinimalEnvironment()
+// Returns: map[string]string{"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", ...}
+
+// Merge environments (override takes precedence)
+base := map[string]string{"PATH": "/usr/bin", "HOME": "/home/user"}
+override := map[string]string{"HOME": "/custom/home", "USER": "customuser"}
+merged := envutil.MergeEnvironment(base, override)
+// Result: {"PATH": "/usr/bin", "HOME": "/custom/home", "USER": "customuser"}
+```
+
+**Note:** The executor uses these functions internally for all command executions, ensuring consistent and secure environment handling across `Execute()`, `ExecuteAsync()`, `ExecuteBatch()`, and `Stream()` methods.
+
+### Security Benefits
+
+- **Prevents information leakage**: Sensitive environment variables (secrets, tokens, keys) from the host process are not inherited
+- **Reduces attack surface**: Minimal environment limits the variables that commands can access
+- **Consistent behavior**: All commands start with the same known-safe base environment
+- **Override capability**: You can still customize environment variables for specific commands when needed
+
 ## Error Handling
 
 ```go
@@ -366,6 +423,7 @@ err := exec.Stream(ctx, cmd, os.Stdout, os.Stderr)
 | `observability` | OpenTelemetry metrics and audit logging |
 | `hooks` | Extension points for custom behavior |
 | `config` | Configuration management |
+| `internal/envutil` | Environment variable utilities (minimal env, merging) |
 
 ## Requirements
 
@@ -379,6 +437,8 @@ err := exec.Stream(ctx, cmd, os.Stdout, os.Stderr)
 - **Argument Validation**: Arguments validated against regex patterns
 - **Path Sanitization**: Prevents path traversal and symlink attacks
 - **Environment Filtering**: Controls which environment variables pass through
+- **Minimal Safe Environment**: All commands automatically start with a minimal, safe environment to prevent information leakage and reduce attack surface
+- **Environment Merging**: Custom environment variables are safely merged with the minimal base, ensuring overrides work correctly while maintaining security
 - **Resource Limits**: CPU, memory, process limits via cgroups and rlimits
 - **Sandboxing**: seccomp-bpf and AppArmor integration (Linux)
 - **Secure File I/O**: All file operations use `gowritter/safepath`

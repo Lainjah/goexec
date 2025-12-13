@@ -50,13 +50,7 @@ lint:
 
 # Verify safepath usage (no direct os file I/O)
 verify-safepath:
-	@echo "Verifying safepath usage..."
-	@if grep -rn "os\.Open\|os\.Create\|os\.ReadFile\|os\.WriteFile\|os\.Remove\|os\.Mkdir\|ioutil\." \
-		--include="*.go" . | grep -v "_test.go" | grep -v "vendor/" | grep -v "internal/exec/runner.go"; then \
-		echo "ERROR: Direct os file I/O detected. Use github.com/victoralfred/gowritter instead."; \
-		exit 1; \
-	fi
-	@echo "No prohibited file I/O found."
+	@./scripts/verify-safepath.sh
 
 # ============================================================================
 # SECURITY

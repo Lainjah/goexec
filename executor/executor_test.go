@@ -188,8 +188,8 @@ func TestExecutor_Execute_Shutdown(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Build() failed: %v", err)
 	}
-	if err := exec.Shutdown(context.Background()); err != nil {
-		t.Errorf("Shutdown() failed: %v", err)
+	if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+		t.Errorf("Shutdown() failed: %v", shutdownErr)
 	}
 
 	cmd, err := NewCommand("/bin/echo", "hello").Build()

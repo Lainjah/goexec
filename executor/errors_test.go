@@ -221,7 +221,7 @@ func TestExecutionError_Is(t *testing.T) {
 }
 
 func TestIsRetryable(t *testing.T) {
-	tests := []struct {
+	tests := []struct { // nolint: govet // Test struct field order doesn't matter
 		name      string
 		err       error
 		retryable bool

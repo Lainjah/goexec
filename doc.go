@@ -44,8 +44,8 @@
 // # File I/O
 //
 // All file operations use github.com/victoralfred/gowritter/safepath
-// for secure path handling. Direct use of os.ReadFile, os.WriteFile,
-// os.Open, os.Create, or io/ioutil is prohibited within this library.
+// for secure path handling. Direct use of standard library file I/O
+// functions from the os and ioutil packages is prohibited.
 //
 // # Package Structure
 //

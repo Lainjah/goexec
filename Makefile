@@ -1,5 +1,5 @@
 .PHONY: all test test-unit test-integration test-race test-all lint vet fmt build clean \
-        coverage verify-safepath security-scan check-deps tidy pre-release ci help
+        coverage verify-safepath security-scan check-deps tidy pre-release ci help tools
 
 # Default target
 all: build
@@ -46,6 +46,7 @@ fmt:
 
 # Run golangci-lint
 lint:
+	@which golangci-lint > /dev/null || (echo "Installing golangci-lint..." && go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest)
 	golangci-lint run --timeout=5m
 
 # Verify safepath usage (no direct os file I/O)
@@ -77,6 +78,18 @@ build:
 # Build with integration tag
 build-integration:
 	go build -tags=integration ./...
+
+# ============================================================================
+# TOOLS
+# ============================================================================
+
+# Install required tools
+tools:
+	@echo "Installing required tools..."
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install github.com/securego/gosec/v2/cmd/gosec@latest
+	go install golang.org/x/vuln/cmd/govulncheck@latest
+	@echo "All tools installed."
 
 # ============================================================================
 # DEPENDENCIES
@@ -205,6 +218,9 @@ help:
 	@echo "  CI/Release:"
 	@echo "    ci                Run CI checks"
 	@echo "    pre-release       Run all pre-release checks"
+	@echo ""
+	@echo "  Setup:"
+	@echo "    tools             Install required tools (golangci-lint, gosec, govulncheck)"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    clean             Remove generated files"

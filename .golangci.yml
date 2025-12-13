@@ -1,13 +1,6 @@
-version: "2"
-
 run:
   timeout: 5m
   tests: true
-
-formatters:
-  enable:
-    - gofmt
-    - goimports
 
 linters:
   enable:
@@ -26,54 +19,56 @@ linters:
     - godot
     - nilerr
     - revive
+    - gofmt
+    - goimports
 
-  settings:
-    errcheck:
-      check-type-assertions: true
-      check-blank: true
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
 
-    govet:
-      enable-all: true
+  govet:
+    enable-all: true
 
-    misspell:
-      locale: US
+  misspell:
+    locale: US
 
-    nakedret:
-      max-func-lines: 30
+  nakedret:
+    max-func-lines: 30
 
-    gocritic:
-      enabled-tags:
-        - diagnostic
-        - style
-        - performance
-      disabled-checks:
-        - hugeParam
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - hugeParam
 
-    godot:
-      scope: declarations
-      capital: true
+  godot:
+    scope: declarations
+    capital: true
 
-    revive:
-      rules:
-        - name: blank-imports
-        - name: context-as-argument
-        - name: context-keys-type
-        - name: dot-imports
-        - name: error-return
-        - name: error-strings
-        - name: error-naming
-        - name: exported
-        - name: if-return
-        - name: increment-decrement
-        - name: var-naming
-        - name: var-declaration
-        - name: package-comments
-        - name: range
-        - name: receiver-naming
-        - name: time-naming
-        - name: unexported-return
-        - name: indent-error-flow
-        - name: errorf
-        - name: empty-block
-        - name: superfluous-else
-        - name: unreachable-code
+  revive:
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unreachable-code

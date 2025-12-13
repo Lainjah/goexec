@@ -296,7 +296,7 @@ func TestViolation(t *testing.T) {
 		Code:     "POLICY_001",
 		Field:    "binary",
 		Message:  "Binary not allowed",
-		Severity: SeverityError, // nolint: govet // Test case needs all fields
+		Severity: SeverityError, //nolint:govet // fieldalignment: test case needs all fields populated
 	}
 
 	if violation.Code == "" {

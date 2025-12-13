@@ -282,6 +282,9 @@ func FilterEnvironment(env map[string]string, allowed, denied []string) map[stri
 }
 
 // MinimalEnvironment returns a minimal safe environment.
+// This function is kept for backward compatibility.
+//
+// Deprecated: Use github.com/victoralfred/goexec/internal/envutil.MinimalEnvironment instead.
 func MinimalEnvironment() map[string]string {
 	return map[string]string{
 		"PATH":   "/usr/bin:/bin",
@@ -294,6 +297,9 @@ func MinimalEnvironment() map[string]string {
 
 // MergeEnvironment merges base environment with overrides.
 // Overrides take precedence.
+// This function is kept for backward compatibility.
+//
+// Deprecated: Use github.com/victoralfred/goexec/internal/envutil.MergeEnvironment instead.
 func MergeEnvironment(base, override map[string]string) map[string]string {
 	result := make(map[string]string, len(base)+len(override))
 

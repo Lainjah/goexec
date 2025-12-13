@@ -12,12 +12,13 @@ import (
 )
 
 // mockRunner is a mock implementation of the internal runner.
-// nolint: unused // Reserved for future test use
+//
+//nolint:unused // reserved for future test use when mocking internal runner
 type mockRunner struct {
 	runFunc func(ctx context.Context, config *internalexec.RunConfig) (*internalexec.RunResult, error)
 }
 
-// nolint: unused // Reserved for future test use
+//nolint:unused // reserved for future test use when mocking internal runner
 func (m *mockRunner) Run(ctx context.Context, config *internalexec.RunConfig) (*internalexec.RunResult, error) {
 	if m.runFunc != nil {
 		return m.runFunc(ctx, config)
@@ -841,7 +842,7 @@ func TestResult_Methods(t *testing.T) {
 }
 
 func TestExitStatus_String(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		status ExitStatus
 		want   string
 	}{
@@ -867,7 +868,7 @@ func TestExitStatus_String(t *testing.T) {
 }
 
 func TestExitStatus_IsRetryable(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		status    ExitStatus
 		retryable bool
 	}{
@@ -897,6 +898,31 @@ func TestResourceUsage(t *testing.T) {
 	expected := 80 * time.Millisecond
 	if total != expected {
 		t.Errorf("TotalCPUTime() = %v, want %v", total, expected)
+	}
+}
+
+func TestExitStatus_IsSuccess(t *testing.T) {
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
+		status ExitStatus
+		want   bool
+	}{
+		{StatusSuccess, true},
+		{StatusError, false},
+		{StatusTimeout, false},
+		{StatusCanceled, false},
+		{StatusKilled, false},
+		{StatusResourceExceeded, false},
+		{StatusPolicyDenied, false},
+		{StatusSandboxViolation, false},
+		{StatusRateLimited, false},
+		{StatusCircuitOpen, false},
+	}
+
+	for _, tt := range tests {
+		got := tt.status.IsSuccess()
+		if got != tt.want {
+			t.Errorf("Status(%v).IsSuccess() = %v, want %v", tt.status, got, tt.want)
+		}
 	}
 }
 

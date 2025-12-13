@@ -336,7 +336,8 @@ func TestRateLimiter_ConcurrentBinaryCreation(t *testing.T) {
 		go func(b string) {
 			defer wg.Done()
 			rl.Allow(b)
-			_ = rl.Wait(context.Background(), b)
+			waitErr := rl.Wait(context.Background(), b)
+			_ = waitErr // Ignore wait errors in concurrent test
 		}(binary)
 	}
 

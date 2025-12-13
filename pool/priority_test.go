@@ -272,4 +272,3 @@ func TestPriorityQueue_Len(t *testing.T) {
 		t.Errorf("Expected length 1 after pop, got %d", pq.Len())
 	}
 }
-

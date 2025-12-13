@@ -26,7 +26,11 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatalf("New failed: %v", err)
 	}
-	defer p.Shutdown(context.Background())
+	defer func() {
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
 	if p == nil {
 		t.Fatal("New returned nil pool")
@@ -118,8 +122,8 @@ func TestPool_Submit_BlockingStrategy(t *testing.T) {
 	}()
 
 	// Fill the queue
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
 
 	// This should block briefly, then succeed or timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
@@ -288,6 +292,7 @@ func TestPool_Stats(t *testing.T) {
 	config.MinWorkers = 2
 	config.MaxWorkers = 4
 
+	var err error
 	p, err := New(config)
 	if err != nil {
 		t.Fatalf("New failed: %v", err)
@@ -369,7 +374,10 @@ func TestPool_Shutdown_WaitForCompletion(t *testing.T) {
 	config := DefaultConfig()
 	config.MinWorkers = 2
 
-	p, _ := New(config)
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -408,7 +416,10 @@ func TestPool_Shutdown_Timeout(t *testing.T) {
 	config := DefaultConfig()
 	config.MinWorkers = 1
 
-	p, _ := New(config)
+	p, err := New(config)
+	if err != nil {
+		t.Fatalf("New failed: %v", err)
+	}
 
 	// Submit a very long-running task
 	p.Submit(context.Background(), Task{
@@ -421,11 +432,11 @@ func TestPool_Shutdown_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	err := p.Shutdown(ctx)
-	if err == nil {
+	shutdownErr := p.Shutdown(ctx)
+	if shutdownErr == nil {
 		t.Log("Shutdown completed (task finished quickly)")
-	} else if !errors.Is(err, context.DeadlineExceeded) {
-		t.Errorf("Expected DeadlineExceeded, got %v", err)
+	} else if !errors.Is(shutdownErr, context.DeadlineExceeded) {
+		t.Errorf("Expected DeadlineExceeded, got %v", shutdownErr)
 	}
 }
 
@@ -585,6 +596,8 @@ func TestPool_Autoscale(t *testing.T) {
 	stats := p.Stats()
 	totalWorkers := stats.ActiveWorkers + stats.IdleWorkers
 
+	// G115: Safe conversion - config.MaxWorkers is bounded by reasonable limits in tests
+	// #nosec G115
 	if totalWorkers > int32(config.MaxWorkers) {
 		t.Errorf("Workers exceeded maximum: %d > %d", totalWorkers, config.MaxWorkers)
 	}
@@ -623,7 +636,11 @@ func TestPool_New_InvalidConfig(t *testing.T) {
 		t.Fatal("New should return pool even with invalid config (uses defaults)")
 	}
 
-	defer p.Shutdown(context.Background())
+	defer func() {
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 }
 
 func TestPool_Submit_ContextCanceled(t *testing.T) {

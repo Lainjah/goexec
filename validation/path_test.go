@@ -266,4 +266,3 @@ func TestPathValidator_Validate_CleanPath(t *testing.T) {
 		t.Errorf("Unexpected format error: %v", err)
 	}
 }
-

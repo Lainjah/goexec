@@ -135,13 +135,13 @@ func TestArgumentValidator_Validate_DeniedPatterns(t *testing.T) {
 			`^\s*;\s*`,
 			`--exec\s*=`,
 		},
-		MaxArgs:     100,
+		MaxArgs:      100,
 		MaxArgLength: 1000,
 	}
 	validator := NewArgumentValidator(config)
 
 	testCases := []struct {
-		arg     string
+		arg        string
 		shouldFail bool
 	}{
 		{"; malicious", true},
@@ -321,4 +321,3 @@ func TestArgumentMatcher_RequiredPatterns(t *testing.T) {
 		t.Logf("Match failed with reason: %s (this is expected if pattern matching logic is strict)", reason)
 	}
 }
-

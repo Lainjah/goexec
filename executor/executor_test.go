@@ -283,10 +283,20 @@ func TestExecutor_Execute_CircuitOpen(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithCircuitBreaker(circuitBreaker).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithCircuitBreaker(circuitBreaker).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "hello").Build()
+	cmd, err := NewCommand("/bin/echo", "hello").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	result, err := exec.Execute(ctx, cmd)
@@ -299,11 +309,21 @@ func TestExecutor_Execute_CircuitOpen(t *testing.T) {
 }
 
 func TestExecutor_Execute_Timeout(t *testing.T) {
-	exec, _ := NewBuilder().WithDefaultTimeout(100 * time.Millisecond).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithDefaultTimeout(100 * time.Millisecond).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
 	// Use a command that will timeout
-	cmd, _ := NewCommand("/bin/sleep", "10").Build()
+	cmd, err := NewCommand("/bin/sleep", "10").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	result, err := exec.Execute(ctx, cmd)
@@ -335,13 +355,25 @@ func TestExecutor_Execute_Hooks(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithHooks(hook).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithHooks(hook).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "test").Build()
+	cmd, err := NewCommand("/bin/echo", "test").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
-	_, _ = exec.Execute(ctx, cmd) // Ignore error for test purposes
+	result, execErr := exec.Execute(ctx, cmd)
+	_ = result
+	_ = execErr // Ignore error for test purposes
 
 	if !preCalled {
 		t.Error("PreExecute hook was not called")
@@ -377,13 +409,25 @@ func TestExecutor_Execute_Telemetry(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithTelemetry(telemetry).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithTelemetry(telemetry).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "test").Build()
+	cmd, err := NewCommand("/bin/echo", "test").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
-	_, _ = exec.Execute(ctx, cmd) // Ignore error for test purposes
+	result, execErr := exec.Execute(ctx, cmd)
+	_ = result
+	_ = execErr // Ignore error for test purposes
 
 	if !spanStarted {
 		t.Error("Telemetry span was not started")
@@ -394,10 +438,20 @@ func TestExecutor_Execute_Telemetry(t *testing.T) {
 }
 
 func TestExecutor_ExecuteAsync(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "hello").Build()
+	cmd, err := NewCommand("/bin/echo", "hello").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	future := exec.ExecuteAsync(ctx, cmd)
@@ -417,8 +471,15 @@ func TestExecutor_ExecuteAsync(t *testing.T) {
 }
 
 func TestExecutor_ExecuteBatch(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
 	cmds := []*Command{
 		NewCommand("/bin/echo", "cmd1").MustBuild(),
@@ -451,7 +512,10 @@ func TestExecutor_Stream(t *testing.T) {
 		}
 	}()
 
-	cmd, _ := NewCommand("/bin/echo", "streamed output").Build()
+	cmd, err := NewCommand("/bin/echo", "streamed output").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	var stdout, stderr strings.Builder
@@ -468,12 +532,15 @@ func TestExecutor_Stream(t *testing.T) {
 }
 
 func TestExecutor_Shutdown(t *testing.T) {
-	exec, _ := NewBuilder().Build()
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := exec.Shutdown(ctx)
+	err = exec.Shutdown(ctx)
 	if err != nil {
 		t.Errorf("Shutdown failed: %v", err)
 	}
@@ -492,7 +559,9 @@ func TestExecutor_Shutdown_WithTimeout(t *testing.T) {
 	}
 	go func() {
 		ctx := context.Background()
-		_, _ = exec.Execute(ctx, cmd) // Ignore error for test purposes
+		result, execErr := exec.Execute(ctx, cmd)
+		_ = result
+		_ = execErr // Ignore error for test purposes
 	}()
 
 	// Give it time to start
@@ -523,13 +592,25 @@ func TestExecutor_Execute_CircuitBreakerRecording(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithCircuitBreaker(circuitBreaker).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithCircuitBreaker(circuitBreaker).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "test").Build()
+	cmd, err := NewCommand("/bin/echo", "test").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
-	exec.Execute(ctx, cmd) // Ignore error
+	result, execErr := exec.Execute(ctx, cmd)
+	_ = result
+	_ = execErr // Ignore error for test purposes
 
 	// At least one should be called (success or failure)
 	if !successRecorded && !failureRecorded {
@@ -538,17 +619,28 @@ func TestExecutor_Execute_CircuitBreakerRecording(t *testing.T) {
 }
 
 func TestExecutor_Execute_CommandTimeout(t *testing.T) {
-	exec, _ := NewBuilder().WithDefaultTimeout(30 * time.Second).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithDefaultTimeout(30 * time.Second).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
 	// Command with explicit timeout
-	cmd, _ := NewCommand("/bin/echo", "test").
+	cmd, err := NewCommand("/bin/echo", "test").
 		WithTimeout(100 * time.Millisecond).
 		Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 
 	ctx := context.Background()
 
-	result, _ := exec.Execute(ctx, cmd)
+	result, execErr := exec.Execute(ctx, cmd)
+	_ = execErr // Ignore error for test purposes
 	if result != nil && result.CommandID == "" {
 		t.Error("CommandID should not be empty")
 	}

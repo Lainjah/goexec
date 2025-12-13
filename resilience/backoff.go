@@ -280,7 +280,7 @@ func (b *DecorrelatedJitterBackoff) Next() time.Duration {
 	}
 	b.attempts++
 
-	// sleep = min(cap, random_between(base, sleep * 3))
+	// Calculate: sleep = min(cap, random_between(base, sleep * 3))
 	maxSleep := time.Duration(float64(b.sleep) * 3)
 	// Use secure random number generation
 	b.sleep = time.Duration(float64(b.base) + secureFloat64()*float64(maxSleep-b.base))

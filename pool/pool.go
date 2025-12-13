@@ -378,13 +378,13 @@ func (w *worker) run() {
 		case task, ok := <-w.pool.taskQueue:
 			if isIdle {
 				atomic.AddInt32(&w.pool.stats.idleWorkers, -1)
-				isIdle = false
 			}
 
 			if !ok {
 				return
 			}
 
+			isIdle = false
 			atomic.AddInt32(&w.pool.stats.activeWorkers, 1)
 			w.pool.executeTask(task)
 			atomic.AddInt32(&w.pool.stats.activeWorkers, -1)

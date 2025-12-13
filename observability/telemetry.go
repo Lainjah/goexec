@@ -163,7 +163,7 @@ func NewTelemetry(config TelemetryConfig) (Telemetry, error) {
 }
 
 // StartSpan implements Telemetry.StartSpan.
-func (t *telemetry) StartSpan(ctx context.Context, name string, opts ...SpanOption) (context.Context, func()) {
+func (t *telemetry) StartSpan(ctx context.Context, name string, opts ...SpanOption) (newCtx context.Context, endSpan func()) {
 	if !t.config.EnableTracing {
 		return ctx, func() {}
 	}
@@ -241,7 +241,7 @@ func NoopTelemetry() Telemetry {
 
 type noopTelemetry struct{}
 
-func (t *noopTelemetry) StartSpan(ctx context.Context, name string, opts ...SpanOption) (context.Context, func()) {
+func (t *noopTelemetry) StartSpan(ctx context.Context, name string, opts ...SpanOption) (newCtx context.Context, endSpan func()) {
 	return ctx, func() {}
 }
 

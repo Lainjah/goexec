@@ -222,7 +222,7 @@ func (c *Cgroup) Destroy() error {
 }
 
 func (c *Cgroup) writeFile(name, content string) error {
-	return c.fs.WriteFile(filepath.Join(c.relPath, name), []byte(content), 0644)
+	return c.fs.WriteFile(filepath.Join(c.relPath, name), []byte(content), 0o644)
 }
 
 func (c *Cgroup) readFile(name string) (string, error) {
@@ -241,7 +241,7 @@ type CgroupStats struct {
 }
 
 // detectCgroupVersion detects the cgroup version and base path.
-func detectCgroupVersion() (int, string) {
+func detectCgroupVersion() (version int, basePath string) {
 	// Use safepath to check for cgroup filesystems
 	sysFS, err := safepath.New("/sys/fs/cgroup")
 	if err != nil {

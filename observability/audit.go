@@ -232,7 +232,7 @@ func (l *fileAuditLogger) Log(ctx context.Context, event *AuditEvent) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if err := l.safePath.AppendFile(l.config.FilePath, data, 0644); err != nil {
+	if err := l.safePath.AppendFile(l.config.FilePath, data, 0o644); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)
 	}
 

@@ -34,9 +34,7 @@ jobs:
           ${{ runner.os }}-go-${{ matrix.go-version }}-
 
     - name: Install tools
-      run: |
-        go install github.com/securego/gosec/v2/cmd/gosec@latest
-        go install golang.org/x/vuln/cmd/govulncheck@latest
+      run: make tools
 
     - name: Run CI checks
       run: make ci
@@ -90,9 +88,7 @@ jobs:
           ${{ runner.os }}-go-1.22-
 
     - name: Install tools
-      run: |
-        go install github.com/securego/gosec/v2/cmd/gosec@latest
-        go install golang.org/x/vuln/cmd/govulncheck@latest
+      run: make tools
 
     - name: Run pre-release checks
       run: make pre-release
@@ -107,24 +103,49 @@ jobs:
           gosec-report.sarif
         retention-days: 90
 
+  status:
+    name: CI Status
+    needs: [ci, lint]
+    runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      status: ${{ steps.set-status.outputs.status }}
+
+    steps:
+    - name: Determine CI status
+      id: set-status
+      run: |
+        if [ "${{ needs.ci.result }}" == "success" ] && \
+           [ "${{ needs.lint.result }}" == "success" ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "CI Status: SUCCESS"
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "CI Status: FAILURE"
+          echo "  ci: ${{ needs.ci.result }}"
+          echo "  lint: ${{ needs.lint.result }}"
+          exit 1
+        fi
+
   notify:
     name: Slack Notification
-    needs: [ci, lint]
+    needs: [ci, lint, status]
     runs-on: ubuntu-latest
     if: always()
     environment: production
 
     steps:
-    - name: Check job status
+    - name: Determine notification status
       id: check-status
       run: |
-        if [ "${{ needs.ci.result }}" != "success" ] || \
-           [ "${{ needs.lint.result }}" != "success" ]; then
-          echo "status=failure" >> $GITHUB_OUTPUT
-          echo "emoji=❌" >> $GITHUB_OUTPUT
-        else
+        if [ "${{ needs.status.result }}" == "success" ]; then
           echo "status=success" >> $GITHUB_OUTPUT
           echo "emoji=✅" >> $GITHUB_OUTPUT
+          echo "color=good" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "emoji=❌" >> $GITHUB_OUTPUT
+          echo "color=danger" >> $GITHUB_OUTPUT
         fi
 
     - name: Send Slack notification
@@ -136,7 +157,7 @@ jobs:
         webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
         payload: |
           {
-            "text": "${{ steps.check-status.outputs.emoji }} CI Pipeline ${{ steps.check-status.outputs.status == 'success' && 'Passed' || 'Failed' }}",
+            "text": "${{ steps.check-status.outputs.emoji }} GoExec CI ${{ steps.check-status.outputs.status == 'success' && 'Passed' || 'Failed' }}",
             "blocks": [
               {
                 "type": "header",
@@ -158,15 +179,18 @@ jobs:
                 "type": "section",
                 "text": {
                   "type": "mrkdwn",
-                  "text": "*Results:* CI: ${{ needs.ci.result }} | Lint: ${{ needs.lint.result }}"
+                  "text": "*Results:*\n• CI Checks: ${{ needs.ci.result }}\n• Lint: ${{ needs.lint.result }}\n• Status: ${{ needs.status.result }}"
                 }
               },
               {
-                "type": "section",
-                "text": {
-                  "type": "mrkdwn",
-                  "text": "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
-                }
+                "type": "actions",
+                "elements": [
+                  {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View Run"},
+                    "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
               }
             ]
           }

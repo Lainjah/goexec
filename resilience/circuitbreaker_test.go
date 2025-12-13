@@ -196,7 +196,7 @@ func TestCircuitBreaker_Reset(t *testing.T) {
 }
 
 func TestCircuitBreaker_StateString(t *testing.T) {
-	tests := []struct {
+	tests := []struct { // nolint: govet // Test struct field order doesn't matter
 		state CircuitState
 		want  string
 	}{
@@ -360,4 +360,3 @@ func TestCircuitBreaker_SuccessClearsFailures(t *testing.T) {
 		t.Errorf("Expected StateClosed, got %v", cb.State("test"))
 	}
 }
-

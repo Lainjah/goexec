@@ -408,4 +408,3 @@ func TestExponentialBackoff_Attempts(t *testing.T) {
 		t.Errorf("After Reset(), attempts should be 0, got %d", backoff.Attempts())
 	}
 }
-

@@ -156,7 +156,7 @@ func TestNewCircuitOpenError(t *testing.T) {
 }
 
 func TestExecutionError_Error(t *testing.T) {
-	tests := []struct {
+	tests := []struct { // nolint: govet // Test struct field order doesn't matter
 		name     string
 		err      *ExecutionError
 		contains string
@@ -271,7 +271,7 @@ func TestGetErrorCode(t *testing.T) {
 }
 
 func TestSeverity_String(t *testing.T) {
-	tests := []struct {
+	tests := []struct { // nolint: govet // Test struct field order doesn't matter
 		severity Severity
 		want     string
 	}{

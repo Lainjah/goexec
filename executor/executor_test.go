@@ -156,8 +156,8 @@ func TestExecutor_Execute_Success(t *testing.T) {
 		t.Fatalf("Build() failed: %v", err)
 	}
 	defer func() {
-		if err := exec.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -221,8 +221,8 @@ func TestExecutor_Execute_PolicyDenied(t *testing.T) {
 		t.Fatalf("Build() failed: %v", err)
 	}
 	defer func() {
-		if err := exec.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -256,8 +256,8 @@ func TestExecutor_Execute_RateLimited(t *testing.T) {
 		t.Fatalf("Build() failed: %v", err)
 	}
 	defer func() {
-		if err := exec.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -446,8 +446,8 @@ func TestExecutor_Stream(t *testing.T) {
 		t.Fatalf("Build() failed: %v", err)
 	}
 	defer func() {
-		if err := exec.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -729,7 +729,7 @@ func TestResult_Methods(t *testing.T) {
 }
 
 func TestExitStatus_String(t *testing.T) {
-	tests := []struct {
+	tests := []struct { // nolint: govet // Test struct field order doesn't matter
 		status ExitStatus
 		want   string
 	}{
@@ -755,7 +755,7 @@ func TestExitStatus_String(t *testing.T) {
 }
 
 func TestExitStatus_IsRetryable(t *testing.T) {
-	tests := []struct {
+	tests := []struct { // nolint: govet // Test struct field order doesn't matter
 		status    ExitStatus
 		retryable bool
 	}{

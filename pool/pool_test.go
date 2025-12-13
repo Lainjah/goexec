@@ -9,6 +9,14 @@ import (
 	"time"
 )
 
+// min returns the minimum of two integers.
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func TestNew(t *testing.T) {
 	config := DefaultConfig()
 	config.MinWorkers = 2
@@ -25,10 +33,7 @@ func TestNew(t *testing.T) {
 	}
 
 	stats := p.Stats()
-	maxWorkersInt32 := int32(config.MaxWorkers)
-	if config.MaxWorkers > int(maxWorkersInt32) {
-		maxWorkersInt32 = 0x7FFFFFFF // MaxInt32
-	}
+	maxWorkersInt32 := int32(min(config.MaxWorkers, 0x7FFFFFFF))
 	if stats.ActiveWorkers < 0 || stats.ActiveWorkers > maxWorkersInt32 {
 		t.Errorf("Invalid active workers count: %d", stats.ActiveWorkers)
 	}
@@ -45,8 +50,8 @@ func TestPool_Submit_Success(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -105,8 +110,8 @@ func TestPool_Submit_BlockingStrategy(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -135,8 +140,8 @@ func TestPool_Submit_RejectStrategy(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -166,8 +171,8 @@ func TestPool_Submit_CallerRunsStrategy(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -210,8 +215,8 @@ func TestPool_Submit_DropOldestStrategy(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -255,8 +260,8 @@ func TestPool_SubmitFunc(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -286,8 +291,8 @@ func TestPool_Stats(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -316,8 +321,8 @@ func TestPool_Resize(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -341,8 +346,8 @@ func TestPool_Resize_Invalid(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -414,8 +419,7 @@ func TestPool_Shutdown_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 
-	var err error
-	err = p.Shutdown(ctx)
+	err := p.Shutdown(ctx)
 	if err == nil {
 		t.Log("Shutdown completed (task finished quickly)")
 	} else if !errors.Is(err, context.DeadlineExceeded) {
@@ -434,8 +438,8 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -465,10 +469,7 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 
 	execCount := atomic.LoadInt32(&executed)
 	halfConcurrency := concurrency / 2
-	halfConcurrencyInt32 := int32(halfConcurrency)
-	if halfConcurrency > int(halfConcurrencyInt32) {
-		halfConcurrencyInt32 = 0x7FFFFFFF // MaxInt32
-	}
+	halfConcurrencyInt32 := int32(min(halfConcurrency, 0x7FFFFFFF))
 	if execCount < halfConcurrencyInt32 {
 		t.Errorf("Expected at least %d executions, got %d", halfConcurrency, execCount)
 	}
@@ -483,8 +484,8 @@ func TestPool_AvgTimes(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -521,8 +522,8 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -540,10 +541,7 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 	stats := p.Stats()
 	totalWorkers := stats.ActiveWorkers + stats.IdleWorkers
 
-	minWorkersInt32 := int32(config.MinWorkers)
-	if config.MinWorkers > int(minWorkersInt32) {
-		minWorkersInt32 = 0x7FFFFFFF // MaxInt32
-	}
+	minWorkersInt32 := int32(min(config.MinWorkers, 0x7FFFFFFF))
 	if totalWorkers < minWorkersInt32 {
 		t.Errorf("Workers dropped below minimum: %d < %d", totalWorkers, config.MinWorkers)
 	}
@@ -561,8 +559,8 @@ func TestPool_Autoscale(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 
@@ -634,8 +632,8 @@ func TestPool_Submit_ContextCanceled(t *testing.T) {
 		t.Fatalf("New failed: %v", err)
 	}
 	defer func() {
-		if err := p.Shutdown(context.Background()); err != nil {
-			t.Errorf("Shutdown() failed: %v", err)
+		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
 		}
 	}()
 

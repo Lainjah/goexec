@@ -10,10 +10,10 @@ import (
 	"github.com/victoralfred/goexec/executor"
 )
 
-// mockValidator is a mock validator for testing
-type mockValidator struct {
-	name     string
-	priority int
+// mockValidator is a mock validator for testing.
+type mockValidator struct { // nolint: govet // Test struct field order doesn't matter
+	name         string
+	priority     int
 	validateFunc func(ctx context.Context, cmd *executor.Command) error
 }
 
@@ -270,4 +270,3 @@ func TestRegistry_PriorityOrdering(t *testing.T) {
 		t.Errorf("Expected 'first' first, got '%s'", callOrder[0])
 	}
 }
-

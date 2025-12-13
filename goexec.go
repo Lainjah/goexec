@@ -359,7 +359,10 @@ func Execute(ctx context.Context, binary string, args ...string) (*Result, error
 	if err != nil {
 		return nil, err
 	}
-	defer exec.Shutdown(context.Background())
+	defer func() {
+		// Ignore shutdown errors in defer - cleanup failure doesn't affect result
+		_ = exec.Shutdown(context.Background())
+	}()
 
 	cmd, err := Cmd(binary, args...).Build()
 	if err != nil {
@@ -379,7 +382,10 @@ func ExecuteWithTimeout(ctx context.Context, timeout time.Duration, binary strin
 	if err != nil {
 		return nil, err
 	}
-	defer exec.Shutdown(context.Background())
+	defer func() {
+		// Ignore shutdown errors in defer - cleanup failure doesn't affect result
+		_ = exec.Shutdown(context.Background())
+	}()
 
 	cmd, err := Cmd(binary, args...).Build()
 	if err != nil {
@@ -399,7 +405,10 @@ func Stream(ctx context.Context, stdout, stderr io.Writer, binary string, args .
 	if err != nil {
 		return err
 	}
-	defer exec.Shutdown(context.Background())
+	defer func() {
+		// Ignore shutdown errors in defer - cleanup failure doesn't affect result
+		_ = exec.Shutdown(context.Background())
+	}()
 
 	cmd, err := Cmd(binary, args...).Build()
 	if err != nil {

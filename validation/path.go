@@ -153,8 +153,8 @@ func (v *PathValidator) validateBinaryPath(path string) error {
 		relPath := strings.TrimPrefix(cleaned, "/")
 		info, err := v.rootFS.Stat(relPath)
 		if err != nil {
-			exists, _ := v.rootFS.Exists(relPath)
-			if !exists {
+			exists, existsErr := v.rootFS.Exists(relPath)
+			if existsErr != nil || !exists {
 				return fmt.Errorf("%w: binary does not exist", executor.ErrInvalidPath)
 			}
 			return fmt.Errorf("%w: cannot stat binary: %v", executor.ErrInvalidPath, err)
@@ -196,8 +196,8 @@ func (v *PathValidator) validateWorkingDir(path string) error {
 	// Check if directory exists
 	info, err := v.rootFS.Stat(relPath)
 	if err != nil {
-		exists, _ := v.rootFS.Exists(relPath)
-		if !exists {
+		exists, existsErr := v.rootFS.Exists(relPath)
+		if existsErr != nil || !exists {
 			return fmt.Errorf("%w: directory does not exist", executor.ErrInvalidPath)
 		}
 		return fmt.Errorf("%w: cannot stat directory: %v", executor.ErrInvalidPath, err)

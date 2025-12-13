@@ -48,7 +48,12 @@ func (pq *PriorityQueue) Pop() (Task, bool) {
 		pq.cond.Wait()
 	}
 
-	task := heap.Pop(&pq.items).(Task)
+	// Type assertion is safe because we only push Task items
+	task, ok := heap.Pop(&pq.items).(Task)
+	if !ok {
+		// This should never happen if heap is used correctly
+		return Task{}, false
+	}
 	return task, true
 }
 
@@ -61,7 +66,12 @@ func (pq *PriorityQueue) TryPop() (Task, bool) {
 		return Task{}, false
 	}
 
-	task := heap.Pop(&pq.items).(Task)
+	// Type assertion is safe because we only push Task items
+	task, ok := heap.Pop(&pq.items).(Task)
+	if !ok {
+		// This should never happen if heap is used correctly
+		return Task{}, false
+	}
 	return task, true
 }
 
@@ -99,7 +109,14 @@ func (h taskHeap) Less(i, j int) bool {
 func (h taskHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h *taskHeap) Push(x interface{}) {
-	*h = append(*h, x.(Task))
+	// Type assertion is safe because PriorityQueue only pushes Task items
+	task, ok := x.(Task)
+	if !ok {
+		// This should never happen if used correctly
+		// Panic is appropriate here as it indicates a programming error
+		panic("taskHeap.Push: expected Task type")
+	}
+	*h = append(*h, task)
 }
 
 func (h *taskHeap) Pop() interface{} {

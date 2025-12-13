@@ -101,7 +101,11 @@ func isAppArmorSupported() bool {
 		return false
 	}
 
-	exists, _ := sysFS.Exists("kernel/security/apparmor")
+	exists, err := sysFS.Exists("kernel/security/apparmor")
+	if err != nil {
+		// If we can't check, assume not available
+		return false
+	}
 	return exists
 }
 

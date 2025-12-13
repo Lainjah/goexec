@@ -154,8 +154,10 @@ func (c *Cgroup) applyLimitsV1(limits *CgroupLimits) error {
 	if limits.MemoryLimitBytes > 0 {
 		memRelPath := filepath.Join(filepath.Dir(c.relPath), "memory", filepath.Base(c.relPath))
 		if err := c.fs.Mkdir(memRelPath, 0755); err == nil {
-			_ = c.fs.WriteFile(filepath.Join(memRelPath, "memory.limit_in_bytes"),
-				[]byte(strconv.FormatInt(limits.MemoryLimitBytes, 10)), 0644)
+			if err := c.fs.WriteFile(filepath.Join(memRelPath, "memory.limit_in_bytes"),
+				[]byte(strconv.FormatInt(limits.MemoryLimitBytes, 10)), 0644); err != nil {
+				return fmt.Errorf("setting memory limit: %w", err)
+			}
 		}
 	}
 
@@ -167,10 +169,14 @@ func (c *Cgroup) applyLimitsV1(limits *CgroupLimits) error {
 			if period == 0 {
 				period = 100000
 			}
-			_ = c.fs.WriteFile(filepath.Join(cpuRelPath, "cpu.cfs_period_us"),
-				[]byte(strconv.FormatInt(period, 10)), 0644)
-			_ = c.fs.WriteFile(filepath.Join(cpuRelPath, "cpu.cfs_quota_us"),
-				[]byte(strconv.FormatInt(limits.CPUQuotaUS, 10)), 0644)
+			if err := c.fs.WriteFile(filepath.Join(cpuRelPath, "cpu.cfs_period_us"),
+				[]byte(strconv.FormatInt(period, 10)), 0644); err != nil {
+				return fmt.Errorf("setting CPU period: %w", err)
+			}
+			if err := c.fs.WriteFile(filepath.Join(cpuRelPath, "cpu.cfs_quota_us"),
+				[]byte(strconv.FormatInt(limits.CPUQuotaUS, 10)), 0644); err != nil {
+				return fmt.Errorf("setting CPU quota: %w", err)
+			}
 		}
 	}
 
@@ -189,7 +195,9 @@ func (c *Cgroup) GetStats() (*CgroupStats, error) {
 	if c.version == 2 {
 		// Read memory.current
 		if data, err := c.readFile("memory.current"); err == nil {
-			stats.MemoryUsageBytes, _ = strconv.ParseInt(strings.TrimSpace(data), 10, 64)
+			if val, parseErr := strconv.ParseInt(strings.TrimSpace(data), 10, 64); parseErr == nil {
+				stats.MemoryUsageBytes = val
+			}
 		}
 
 		// Read cpu.stat
@@ -199,7 +207,9 @@ func (c *Cgroup) GetStats() (*CgroupStats, error) {
 
 		// Read pids.current
 		if data, err := c.readFile("pids.current"); err == nil {
-			stats.PidsCount, _ = strconv.ParseInt(strings.TrimSpace(data), 10, 64)
+			if val, parseErr := strconv.ParseInt(strings.TrimSpace(data), 10, 64); parseErr == nil {
+				stats.PidsCount = val
+			}
 		}
 	}
 
@@ -239,12 +249,12 @@ func detectCgroupVersion() (int, string) {
 	}
 
 	// Check for cgroup v2 (unified hierarchy)
-	if exists, _ := sysFS.Exists("cgroup.controllers"); exists {
+	if exists, err := sysFS.Exists("cgroup.controllers"); err == nil && exists {
 		return 2, "/sys/fs/cgroup"
 	}
 
 	// Check for cgroup v1
-	if exists, _ := sysFS.Exists("cpu"); exists {
+	if exists, err := sysFS.Exists("cpu"); err == nil && exists {
 		return 1, "/sys/fs/cgroup/cpu"
 	}
 
@@ -275,8 +285,9 @@ func parseCPUStat(data string) int64 {
 		if strings.HasPrefix(line, "usage_usec ") {
 			parts := strings.Fields(line)
 			if len(parts) == 2 {
-				val, _ := strconv.ParseInt(parts[1], 10, 64)
-				return val
+				if val, err := strconv.ParseInt(parts[1], 10, 64); err == nil {
+					return val
+				}
 			}
 		}
 	}

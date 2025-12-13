@@ -156,7 +156,7 @@ func TestNewCircuitOpenError(t *testing.T) {
 }
 
 func TestExecutionError_Error(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		name     string
 		err      *ExecutionError
 		contains string

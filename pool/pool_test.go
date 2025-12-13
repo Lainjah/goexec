@@ -9,8 +9,9 @@ import (
 	"time"
 )
 
-// min returns the minimum of two integers.
-func min(a, b int) int {
+// minInt returns the minimum of two integers.
+// Named minInt to avoid shadowing the builtin min function (Go 1.21+).
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
@@ -39,7 +40,7 @@ func TestNew(t *testing.T) {
 	stats := p.Stats()
 	// G115: Safe conversion - we clamp to MaxInt32 to prevent overflow
 	// #nosec G115
-	maxWorkersInt32 := int32(min(config.MaxWorkers, 0x7FFFFFFF))
+	maxWorkersInt32 := int32(minInt(config.MaxWorkers, 0x7FFFFFFF))
 	if stats.ActiveWorkers < 0 || stats.ActiveWorkers > maxWorkersInt32 {
 		t.Errorf("Invalid active workers count: %d", stats.ActiveWorkers)
 	}
@@ -244,12 +245,12 @@ func TestPool_Submit_DropOldestStrategy(t *testing.T) {
 	_ = submitErr1 // Ignore submit errors for test purposes
 
 	// Try to submit another - should drop the first
-	submitErr := p.Submit(context.Background(), Task{
+	submitErr2 := p.Submit(context.Background(), Task{
 		Fn: func() {
 			atomic.AddInt32(&dropped, 1)
 		},
 	})
-	_ = submitErr // Ignore submit errors for test purposes
+	_ = submitErr2 // Ignore submit errors for test purposes
 
 	if err != nil {
 		t.Logf("Submit failed (may have rejected): %v", err)
@@ -391,12 +392,13 @@ func TestPool_Shutdown_WaitForCompletion(t *testing.T) {
 	wg.Add(1)
 
 	// Submit a long-running task
-	p.Submit(context.Background(), Task{
+	submitErr := p.Submit(context.Background(), Task{
 		Fn: func() {
 			defer wg.Done()
 			time.Sleep(100 * time.Millisecond)
 		},
 	})
+	_ = submitErr // Ignore submit errors for test purposes
 
 	// Shutdown should wait for task to complete
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -430,11 +432,12 @@ func TestPool_Shutdown_Timeout(t *testing.T) {
 	}
 
 	// Submit a very long-running task
-	p.Submit(context.Background(), Task{
+	submitErr := p.Submit(context.Background(), Task{
 		Fn: func() {
 			time.Sleep(10 * time.Second)
 		},
 	})
+	_ = submitErr // Ignore submit errors for test purposes
 
 	// Shutdown with short timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
@@ -472,11 +475,13 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err = p.Submit(context.Background(), Task{
+			submitErr := p.Submit(context.Background(), Task{
 				Fn: func() {
 					atomic.AddInt32(&executed, 1)
 				},
 			})
+			_ = submitErr // Ignore submit errors for test purposes
+			_ = submitErr // Ignore submit errors for test purposes
 			if err != nil {
 				t.Errorf("Submit failed: %v", err)
 			}
@@ -514,11 +519,12 @@ func TestPool_AvgTimes(t *testing.T) {
 
 	// Submit several tasks
 	for i := 0; i < 5; i++ {
-		p.Submit(context.Background(), Task{
+		submitErr := p.Submit(context.Background(), Task{
 			Fn: func() {
 				time.Sleep(10 * time.Millisecond)
 			},
 		})
+		_ = submitErr // Ignore submit errors for test purposes
 	}
 
 	time.Sleep(200 * time.Millisecond)
@@ -551,9 +557,10 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 	}()
 
 	// Submit a task
-	p.Submit(context.Background(), Task{
+	submitErr := p.Submit(context.Background(), Task{
 		Fn: func() {},
 	})
+	_ = submitErr // Ignore submit errors for test purposes
 
 	initialWorkers := p.Stats().ActiveWorkers + p.Stats().IdleWorkers
 
@@ -591,11 +598,12 @@ func TestPool_Autoscale(t *testing.T) {
 
 	// Fill the queue to trigger autoscaling
 	for i := 0; i < 30; i++ {
-		p.Submit(context.Background(), Task{
+		submitErr := p.Submit(context.Background(), Task{
 			Fn: func() {
 				time.Sleep(50 * time.Millisecond)
 			},
 		})
+		_ = submitErr // Ignore submit errors for test purposes
 	}
 
 	// Wait for autoscaler
@@ -669,8 +677,10 @@ func TestPool_Submit_ContextCanceled(t *testing.T) {
 	}()
 
 	// Fill the queue
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(200 * time.Millisecond) }})
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(200 * time.Millisecond) }})
+	submitErr1 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(200 * time.Millisecond) }})
+	_ = submitErr1 // Ignore submit errors for test purposes
+	submitErr2 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(200 * time.Millisecond) }})
+	_ = submitErr2 // Ignore submit errors for test purposes
 
 	// Submit with canceled context
 	ctx, cancel := context.WithCancel(context.Background())

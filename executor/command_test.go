@@ -354,7 +354,7 @@ func TestCommand_Clone_NilResourceLimits(t *testing.T) {
 }
 
 func TestCommand_String(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		want string
 		cmd  *Command
 		name string
@@ -400,7 +400,7 @@ func TestCommand_String(t *testing.T) {
 }
 
 func TestPriority_String(t *testing.T) {
-	tests := []struct { // nolint: govet // Test struct field order doesn't matter
+	tests := []struct { //nolint:govet // fieldalignment: test struct field order optimized for readability not memory
 		priority Priority
 		want     string
 	}{

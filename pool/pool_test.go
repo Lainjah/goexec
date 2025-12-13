@@ -250,10 +250,8 @@ func TestPool_Submit_DropOldestStrategy(t *testing.T) {
 			atomic.AddInt32(&dropped, 1)
 		},
 	})
-	_ = submitErr2 // Ignore submit errors for test purposes
-
-	if err != nil {
-		t.Logf("Submit failed (may have rejected): %v", err)
+	if submitErr2 != nil {
+		t.Logf("Submit failed (may have rejected): %v", submitErr2)
 	}
 
 	// Wait for execution
@@ -480,10 +478,8 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 					atomic.AddInt32(&executed, 1)
 				},
 			})
-			_ = submitErr // Ignore submit errors for test purposes
-			_ = submitErr // Ignore submit errors for test purposes
-			if err != nil {
-				t.Errorf("Submit failed: %v", err)
+			if submitErr != nil {
+				t.Errorf("Submit failed: %v", submitErr)
 			}
 		}()
 	}
@@ -497,7 +493,7 @@ func TestPool_ConcurrentSubmit(t *testing.T) {
 	halfConcurrency := concurrency / 2
 	// G115: Safe conversion - we clamp to MaxInt32 to prevent overflow
 	// #nosec G115
-	halfConcurrencyInt32 := int32(min(halfConcurrency, 0x7FFFFFFF))
+	halfConcurrencyInt32 := int32(minInt(halfConcurrency, 0x7FFFFFFF))
 	if execCount < halfConcurrencyInt32 {
 		t.Errorf("Expected at least %d executions, got %d", halfConcurrency, execCount)
 	}
@@ -573,7 +569,7 @@ func TestPool_WorkerIdleTimeout(t *testing.T) {
 
 	// G115: Safe conversion - we clamp to MaxInt32 to prevent overflow
 	// #nosec G115
-	minWorkersInt32 := int32(min(config.MinWorkers, 0x7FFFFFFF))
+	minWorkersInt32 := int32(minInt(config.MinWorkers, 0x7FFFFFFF))
 	if totalWorkers < minWorkersInt32 {
 		t.Errorf("Workers dropped below minimum: %d < %d", totalWorkers, config.MinWorkers)
 	}
@@ -652,11 +648,9 @@ func TestPool_New_InvalidConfig(t *testing.T) {
 		t.Fatal("New should return pool even with invalid config (uses defaults)")
 	}
 
-	defer func() {
-		if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
-			t.Errorf("Shutdown() failed: %v", shutdownErr)
-		}
-	}()
+	if shutdownErr := p.Shutdown(context.Background()); shutdownErr != nil {
+		t.Errorf("Shutdown() failed: %v", shutdownErr)
+	}
 }
 
 func TestPool_Submit_ContextCanceled(t *testing.T) {

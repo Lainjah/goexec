@@ -112,7 +112,7 @@ func (m *mockTelemetry) RecordMetric(name string, value float64, labels map[stri
 	}
 }
 
-// mockHook is a mock hook implementation
+// mockHook is a mock hook implementation for testing.
 type mockHook struct {
 	preExecuteFunc  func(ctx context.Context, cmd *Command) (*Command, error)
 	postExecuteFunc func(ctx context.Context, cmd *Command, result *Result, err error) error

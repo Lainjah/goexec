@@ -58,32 +58,41 @@ jobs:
       id: version
       run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
-    - name: Generate changelog
+    - name: Extract release notes from CHANGELOG
       id: changelog
       run: |
-        # Get commits since last tag
-        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-        if [ -n "$PREV_TAG" ]; then
-          echo "Changes since $PREV_TAG:"
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
+        VERSION="${GITHUB_REF#refs/tags/v}"
+        echo "Extracting notes for version $VERSION"
+
+        # Extract section for this version from CHANGELOG.md
+        if [ -f CHANGELOG.md ]; then
+          # Extract content between this version header and the next version header
+          awk "/^## \[$VERSION\]/{flag=1; next} /^## \[/{flag=0} flag" CHANGELOG.md > release-notes.txt
+
+          if [ ! -s release-notes.txt ]; then
+            echo "No specific notes found, using default"
+            echo "Release $VERSION" > release-notes.txt
+          fi
         else
-          echo "Initial release"
-          CHANGELOG=$(git log --pretty=format:"- %s (%h)")
+          echo "CHANGELOG.md not found, generating from commits"
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD > release-notes.txt
+          else
+            git log --pretty=format:"- %s (%h)" > release-notes.txt
+          fi
         fi
 
-        # Write to file for multiline output
-        echo "$CHANGELOG" > changelog.txt
-        echo "changelog_file=changelog.txt" >> $GITHUB_OUTPUT
+        cat release-notes.txt
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.version.outputs.version }}
-        name: ${{ steps.version.outputs.version }}
-        body_path: changelog.txt
+        name: GoExec ${{ steps.version.outputs.version }}
+        body_path: release-notes.txt
         draft: false
         prerelease: ${{ contains(steps.version.outputs.version, '-') }}
-        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

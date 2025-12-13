@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/victoralfred/goexec/internal/envutil"
 	internalexec "github.com/victoralfred/goexec/internal/exec"
 )
 
@@ -264,10 +265,14 @@ func (e *executor) Execute(ctx context.Context, cmd *Command) (*Result, error) {
 	defer cancel()
 
 	// Build run configuration
+	// Merge command environment with minimal safe environment
+	// This ensures we always have a safe base, even if cmd.Env is empty
+	minimalEnv := envutil.MinimalEnvironment()
+	mergedEnv := envutil.MergeEnvironment(minimalEnv, cmd.Env)
 	config := &internalexec.RunConfig{
 		Binary:     cmd.Binary,
 		Args:       cmd.Args,
-		Env:        internalexec.BuildEnv(cmd.Env),
+		Env:        internalexec.BuildEnv(mergedEnv),
 		WorkingDir: cmd.WorkingDir,
 		Stdin:      cmd.Stdin,
 	}
@@ -374,10 +379,14 @@ func (e *executor) Stream(ctx context.Context, cmd *Command, stdout, stderr io.W
 	defer cancel()
 
 	// Build run configuration with streaming
+	// Merge command environment with minimal safe environment
+	// This ensures we always have a safe base, even if cmd.Env is empty
+	minimalEnv := envutil.MinimalEnvironment()
+	mergedEnv := envutil.MergeEnvironment(minimalEnv, cmd.Env)
 	config := &internalexec.RunConfig{
 		Binary:     cmd.Binary,
 		Args:       cmd.Args,
-		Env:        internalexec.BuildEnv(cmd.Env),
+		Env:        internalexec.BuildEnv(mergedEnv),
 		WorkingDir: cmd.WorkingDir,
 		Stdin:      cmd.Stdin,
 		Stdout:     stdout,

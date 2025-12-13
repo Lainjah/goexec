@@ -21,12 +21,17 @@ type Runner struct {
 }
 
 // NewRunner creates a new command runner.
+// Note: The minimal env here matches envutil.MinimalEnvironment() for consistency.
+// The actual merging with command-provided env happens in executor.go using
+// envutil.MergeEnvironment() before calling Runner.Run().
 func NewRunner() *Runner {
 	return &Runner{
 		minimalEnv: []string{
 			"PATH=/usr/bin:/bin",
 			"LANG=C.UTF-8",
 			"LC_ALL=C.UTF-8",
+			"HOME=/tmp",
+			"USER=nobody",
 		},
 	}
 }
@@ -79,7 +84,10 @@ func (r *Runner) Run(ctx context.Context, config *RunConfig) (*RunResult, error)
 	// #nosec G204 -- Binary path and arguments are validated upstream
 	cmd := exec.CommandContext(ctx, config.Binary, config.Args...)
 
-	// Set environment - use minimal env if none provided
+	// Set environment - use provided env or fall back to minimal env
+	// Note: The executor layer should have already merged minimal env with
+	// command-provided env using envutil.MergeEnvironment() before calling Run().
+	// This fallback is for backwards compatibility and safety.
 	if len(config.Env) > 0 {
 		cmd.Env = config.Env
 	} else {

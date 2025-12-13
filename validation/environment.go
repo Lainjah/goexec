@@ -11,28 +11,15 @@ import (
 
 // EnvironmentValidatorConfig configures the environment validator.
 type EnvironmentValidatorConfig struct {
-	// AllowedVars are environment variables that are allowed.
-	// Supports wildcards: "PATH", "LC_*", etc.
-	AllowedVars []string
-
-	// DeniedVars are environment variables that are denied.
-	// Supports wildcards: "*_SECRET", "*_PASSWORD", etc.
-	DeniedVars []string
-
-	// MaxVars is the maximum number of environment variables.
-	MaxVars int
-
-	// MaxKeyLength is the maximum length of a variable name.
-	MaxKeyLength int
-
-	// MaxValueLength is the maximum length of a variable value.
+	AllowedVars    []string
+	DeniedVars     []string
+	MaxVars        int
+	MaxKeyLength   int
 	MaxValueLength int
-
-	// AllowEmpty allows empty values.
-	AllowEmpty bool
+	AllowEmpty     bool
 }
 
-// EnvironmentValidator validates environment variables.
+// EnvironmentValidator validates command environment variables.
 type EnvironmentValidator struct {
 	config        *EnvironmentValidatorConfig
 	allowedRegexp []*regexp.Regexp
@@ -128,34 +115,32 @@ func (v *EnvironmentValidator) Validate(ctx context.Context, cmd *executor.Comma
 func (v *EnvironmentValidator) validateVar(key, value string) error {
 	// Check key length
 	if len(key) > v.config.MaxKeyLength {
-		return fmt.Errorf("environment key %q too long (%d > %d)",
-			key, len(key), v.config.MaxKeyLength)
+		return fmt.Errorf("environment key too long: %d > %d", len(key), v.config.MaxKeyLength)
 	}
 
 	// Check value length
 	if len(value) > v.config.MaxValueLength {
-		return fmt.Errorf("environment value for %q too long (%d > %d)",
-			key, len(value), v.config.MaxValueLength)
+		return fmt.Errorf("environment value too long: %d > %d", len(value), v.config.MaxValueLength)
 	}
 
-	// Check empty value
-	if !v.config.AllowEmpty && value == "" {
-		return fmt.Errorf("empty environment value for %q not allowed", key)
-	}
-
-	// Check key format (must be valid identifier)
+	// Validate key format
 	if !isValidEnvKey(key) {
-		return fmt.Errorf("invalid environment key %q", key)
+		return fmt.Errorf("invalid environment key: %s", key)
 	}
 
-	// Check against denied patterns first
+	// Validate value safety
+	if err := validateEnvValue(value); err != nil {
+		return fmt.Errorf("invalid environment value for %s: %w", key, err)
+	}
+
+	// Check denied patterns first
 	for _, re := range v.deniedRegexp {
 		if re.MatchString(key) {
-			return fmt.Errorf("environment variable %q matches denied pattern", key)
+			return fmt.Errorf("denied environment variable: %s", key)
 		}
 	}
 
-	// Check against allowed patterns
+	// If allowed patterns are specified, check them
 	if len(v.allowedRegexp) > 0 {
 		allowed := false
 		for _, re := range v.allowedRegexp {
@@ -165,13 +150,8 @@ func (v *EnvironmentValidator) validateVar(key, value string) error {
 			}
 		}
 		if !allowed {
-			return fmt.Errorf("environment variable %q not in allowlist", key)
+			return fmt.Errorf("environment variable not allowed: %s", key)
 		}
-	}
-
-	// Check value for dangerous content
-	if err := validateEnvValue(value); err != nil {
-		return fmt.Errorf("invalid value for %q: %w", key, err)
 	}
 
 	return nil
@@ -276,39 +256,6 @@ func FilterEnvironment(env map[string]string, allowed, denied []string) map[stri
 		}
 
 		result[key] = value
-	}
-
-	return result
-}
-
-// MinimalEnvironment returns a minimal safe environment.
-// This function is kept for backward compatibility.
-//
-// Deprecated: Use github.com/victoralfred/goexec/internal/envutil.MinimalEnvironment instead.
-func MinimalEnvironment() map[string]string {
-	return map[string]string{
-		"PATH":   "/usr/bin:/bin",
-		"LANG":   "C.UTF-8",
-		"LC_ALL": "C.UTF-8",
-		"HOME":   "/tmp",
-		"USER":   "nobody",
-	}
-}
-
-// MergeEnvironment merges base environment with overrides.
-// Overrides take precedence.
-// This function is kept for backward compatibility.
-//
-// Deprecated: Use github.com/victoralfred/goexec/internal/envutil.MergeEnvironment instead.
-func MergeEnvironment(base, override map[string]string) map[string]string {
-	result := make(map[string]string, len(base)+len(override))
-
-	for k, v := range base {
-		result[k] = v
-	}
-
-	for k, v := range override {
-		result[k] = v
 	}
 
 	return result

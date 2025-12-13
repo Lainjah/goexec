@@ -1,0 +1,153 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  pre-release-checks:
+    name: Pre-Release Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-1.22-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-1.22-
+
+    - name: Install tools
+      run: make tools
+
+    - name: Run pre-release checks
+      run: make pre-release
+
+    - name: Upload test coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          coverage.out
+          coverage.integration.out
+        retention-days: 90
+
+  release:
+    name: Create Release
+    needs: [pre-release-checks]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Get version from tag
+      id: version
+      run: echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get commits since last tag
+        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$PREV_TAG" ]; then
+          echo "Changes since $PREV_TAG:"
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD)
+        else
+          echo "Initial release"
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)")
+        fi
+
+        # Write to file for multiline output
+        echo "$CHANGELOG" > changelog.txt
+        echo "changelog_file=changelog.txt" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.version }}
+        name: ${{ steps.version.outputs.version }}
+        body_path: changelog.txt
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-release:
+    name: Notify Release
+    needs: [pre-release-checks, release]
+    runs-on: ubuntu-latest
+    if: always()
+    environment: production
+
+    steps:
+    - name: Determine status
+      id: status
+      run: |
+        if [ "${{ needs.pre-release-checks.result }}" == "success" ] && \
+           [ "${{ needs.release.result }}" == "success" ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "emoji=🚀" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "emoji=❌" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Send Slack notification
+      if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      uses: slackapi/slack-github-action@v1
+      with:
+        webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
+        payload: |
+          {
+            "text": "${{ steps.status.outputs.emoji }} GoExec Release ${{ github.ref_name }} ${{ steps.status.outputs.status == 'success' && 'Published' || 'Failed' }}",
+            "blocks": [
+              {
+                "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "${{ steps.status.outputs.emoji }} GoExec Release ${{ steps.status.outputs.status == 'success' && 'Published' || 'Failed' }}"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {"type": "mrkdwn", "text": "*Version:*\n${{ github.ref_name }}"},
+                  {"type": "mrkdwn", "text": "*Author:*\n${{ github.actor }}"}
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Results:*\n• Pre-Release Checks: ${{ needs.pre-release-checks.result }}\n• Release: ${{ needs.release.result }}"
+                }
+              },
+              {
+                "type": "actions",
+                "elements": [
+                  {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View Release"},
+                    "url": "https://github.com/${{ github.repository }}/releases/tag/${{ github.ref_name }}"
+                  }
+                ]
+              }
+            ]
+          }

@@ -2,142 +2,155 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, master, develop]
   pull_request:
-    branches: [main, develop]
+    branches: [main, master, develop]
 
 jobs:
+  ci:
+    name: CI Checks
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.23', '1.24']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+    - name: Install tools
+      run: make tools
+
+    - name: Run CI checks
+      run: make ci
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v4
+      if: matrix.go-version == '1.22'
+      with:
+        files: coverage.out
+        fail_ci_if_error: false
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23'
 
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@v7
-        with:
-          version: v2.7.2
-          args: --timeout=5m
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v4
+      with:
+        version: latest
+        args: --timeout=5m
 
-  security:
-    name: Security Scan
+  status:
+    name: CI Status
+    needs: [ci, lint]
     runs-on: ubuntu-latest
+    if: always()
+    outputs:
+      status: ${{ steps.set-status.outputs.status }}
+
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-
-      - name: Install gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
-
-      - name: Run gosec
-        run: gosec -quiet ./...
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-
-      - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
-
-      - name: Check coverage threshold
-        run: |
-          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-          echo "Total coverage: ${COVERAGE}%"
-          # Phase 0 threshold: 40% (will increase as we add more logic)
-          if (( $(echo "$COVERAGE < 40" | bc -l) )); then
-            echo "Coverage ${COVERAGE}% is below threshold 40%"
-            exit 1
-          fi
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: [lint, security, test]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 'stable'
-
-      - name: Build
-        run: go build -v ./cmd/devsec
-
-  verify-safepath:
-    name: Verify SafePath Usage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for prohibited os file I/O
-        run: |
-          if grep -rn "os\.Open\|os\.Create\|os\.ReadFile\|os\.WriteFile\|os\.Remove\|os\.Mkdir\|ioutil\." --include="*.go" . | grep -v "_test.go" | grep -v "vendor/"; then
-            echo "ERROR: Direct os file I/O detected. Use github.com/victoralfred/gowritter instead."
-            exit 1
-          fi
-          echo "No prohibited file I/O found."
+    - name: Determine CI status
+      id: set-status
+      run: |
+        if [ "${{ needs.ci.result }}" == "success" ] && \
+           [ "${{ needs.lint.result }}" == "success" ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "CI Status: SUCCESS"
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "CI Status: FAILURE"
+          echo "  ci: ${{ needs.ci.result }}"
+          echo "  lint: ${{ needs.lint.result }}"
+          exit 1
+        fi
 
   notify:
     name: Slack Notification
+    needs: [ci, lint, status]
     runs-on: ubuntu-latest
-    needs: [lint, security, test, build, verify-safepath]
     if: always()
     environment: production
+
     steps:
-      - name: Send Slack notification
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        run: |
-          if [ "${{ needs.lint.result }}" == "success" ] && \
-             [ "${{ needs.security.result }}" == "success" ] && \
-             [ "${{ needs.test.result }}" == "success" ] && \
-             [ "${{ needs.build.result }}" == "success" ] && \
-             [ "${{ needs.verify-safepath.result }}" == "success" ]; then
-            STATUS="success"
-            COLOR="good"
-            TEXT="All CI checks passed for devsec"
-          else
-            STATUS="failure"
-            COLOR="danger"
-            TEXT="CI checks failed for devsec"
-          fi
+    - name: Determine notification status
+      id: check-status
+      run: |
+        if [ "${{ needs.status.result }}" == "success" ]; then
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "emoji=✅" >> $GITHUB_OUTPUT
+          echo "color=good" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "emoji=❌" >> $GITHUB_OUTPUT
+          echo "color=danger" >> $GITHUB_OUTPUT
+        fi
 
-          if [ -z "$SLACK_WEBHOOK_URL" ]; then
-            echo "Warning: SLACK_WEBHOOK_URL not configured, skipping notification"
-            exit 0
-          fi
-
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{
-              \"attachments\": [{
-                \"color\": \"$COLOR\",
-                \"title\": \"CI Pipeline $STATUS\",
-                \"text\": \"$TEXT\",
-                \"fields\": [
-                  {\"title\": \"Repository\", \"value\": \"${{ github.repository }}\", \"short\": true},
-                  {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
-                  {\"title\": \"Commit\", \"value\": \"${{ github.sha }}\", \"short\": true},
-                  {\"title\": \"Actor\", \"value\": \"${{ github.actor }}\", \"short\": true}
-                ],
-                \"footer\": \"GitHub Actions\",
-                \"ts\": $(date +%s)
-              }]
-            }" \
-            "$SLACK_WEBHOOK_URL"
+    - name: Send Slack notification
+      if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      uses: slackapi/slack-github-action@v1
+      with:
+        webhook-url: ${{ env.SLACK_WEBHOOK_URL }}
+        payload: |
+          {
+            "text": "${{ steps.check-status.outputs.emoji }} GoExec CI ${{ steps.check-status.outputs.status == 'success' && 'Passed' || 'Failed' }}",
+            "blocks": [
+              {
+                "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "${{ steps.check-status.outputs.emoji }} GoExec CI ${{ steps.check-status.outputs.status == 'success' && 'Passed' || 'Failed' }}"
+                }
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {"type": "mrkdwn", "text": "*Repository:*\n${{ github.repository }}"},
+                  {"type": "mrkdwn", "text": "*Branch:*\n${{ github.ref_name }}"},
+                  {"type": "mrkdwn", "text": "*Commit:*\n`${{ github.sha }}`"},
+                  {"type": "mrkdwn", "text": "*Author:*\n${{ github.actor }}"}
+                ]
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Results:*\n• CI Checks: ${{ needs.ci.result }}\n• Lint: ${{ needs.lint.result }}\n• Status: ${{ needs.status.result }}"
+                }
+              },
+              {
+                "type": "actions",
+                "elements": [
+                  {
+                    "type": "button",
+                    "text": {"type": "plain_text", "text": "View Run"},
+                    "url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                  }
+                ]
+              }
+            ]
+          }

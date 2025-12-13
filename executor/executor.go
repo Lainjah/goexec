@@ -108,6 +108,7 @@ type executor struct {
 	runner         *internalexec.Runner
 	hooks          []Hook
 	wg             sync.WaitGroup
+	mu             sync.RWMutex // protects shutdown check and wg.Add
 	defaultTimeout time.Duration
 	shutdown       int32
 }
@@ -196,11 +197,16 @@ func (b *Builder) Build() (Executor, error) {
 
 // Execute runs a command synchronously.
 func (e *executor) Execute(ctx context.Context, cmd *Command) (*Result, error) {
+	// Use mutex to ensure shutdown check and wg.Add are atomic
+	// This prevents a race where Shutdown starts wg.Wait() between our check and Add
+	e.mu.RLock()
 	if atomic.LoadInt32(&e.shutdown) == 1 {
+		e.mu.RUnlock()
 		return nil, ErrExecutorShutdown
 	}
-
 	e.wg.Add(1)
+	e.mu.RUnlock()
+
 	defer e.wg.Done()
 
 	// Start telemetry span
@@ -350,11 +356,16 @@ func (e *executor) ExecuteBatch(ctx context.Context, cmds []*Command) ([]*Result
 
 // Stream executes a command with streaming I/O.
 func (e *executor) Stream(ctx context.Context, cmd *Command, stdout, stderr io.Writer) error {
+	// Use mutex to ensure shutdown check and wg.Add are atomic
+	// This prevents a race where Shutdown starts wg.Wait() between our check and Add
+	e.mu.RLock()
 	if atomic.LoadInt32(&e.shutdown) == 1 {
+		e.mu.RUnlock()
 		return ErrExecutorShutdown
 	}
-
 	e.wg.Add(1)
+	e.mu.RUnlock()
+
 	defer e.wg.Done()
 
 	// Validate against policy
@@ -399,8 +410,13 @@ func (e *executor) Stream(ctx context.Context, cmd *Command, stdout, stderr io.W
 
 // Shutdown gracefully shuts down the executor.
 func (e *executor) Shutdown(ctx context.Context) error {
+	// Acquire write lock to prevent new executions from starting
+	// Any Execute calls will block on RLock until we release
+	e.mu.Lock()
 	atomic.StoreInt32(&e.shutdown, 1)
+	e.mu.Unlock()
 
+	// Now wait for any in-progress executions to complete
 	done := make(chan struct{})
 	go func() {
 		e.wg.Wait()

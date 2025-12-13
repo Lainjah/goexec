@@ -76,18 +76,18 @@ func (r *Registry) ValidateAll(ctx context.Context, cmd *executor.Command) error
 	}
 
 	if len(errs) > 0 {
-		return &ValidationErrors{Errors: errs}
+		return &Errors{Errors: errs}
 	}
 	return nil
 }
 
-// ValidationErrors contains multiple validation errors.
-type ValidationErrors struct {
+// Errors contains multiple validation errors.
+type Errors struct {
 	Errors []error
 }
 
 // Error returns the error message.
-func (e *ValidationErrors) Error() string {
+func (e *Errors) Error() string {
 	if len(e.Errors) == 1 {
 		return e.Errors[0].Error()
 	}
@@ -95,7 +95,7 @@ func (e *ValidationErrors) Error() string {
 }
 
 // Unwrap returns the first error.
-func (e *ValidationErrors) Unwrap() error {
+func (e *Errors) Unwrap() error {
 	if len(e.Errors) > 0 {
 		return e.Errors[0]
 	}
@@ -103,7 +103,7 @@ func (e *ValidationErrors) Unwrap() error {
 }
 
 // Is reports whether any error matches the target.
-func (e *ValidationErrors) Is(target error) bool {
+func (e *Errors) Is(target error) bool {
 	for _, err := range e.Errors {
 		if errors.Is(err, target) {
 			return true

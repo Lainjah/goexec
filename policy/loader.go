@@ -20,21 +20,21 @@ type Loader struct {
 	mu         sync.RWMutex
 	lastHash   []byte
 	lastLoad   time.Time
-	validators []PolicyValidator
+	validators []Validator
 	onChange   []func(*CompiledPolicy)
 	watchStop  chan struct{}
 }
 
-// PolicyValidator validates a policy configuration.
-type PolicyValidator interface {
-	Validate(config *PolicyConfig) error
+// Validator validates a policy configuration.
+type Validator interface {
+	Validate(config *Config) error
 }
 
 // LoaderOption configures the loader.
 type LoaderOption func(*Loader)
 
 // WithValidator adds a policy validator.
-func WithValidator(v PolicyValidator) LoaderOption {
+func WithValidator(v Validator) LoaderOption {
 	return func(l *Loader) {
 		l.validators = append(l.validators, v)
 	}
@@ -57,7 +57,7 @@ func NewLoader(basePath, policyFile string, opts ...LoaderOption) (*Loader, erro
 	l := &Loader{
 		path:       policyFile,
 		safePath:   sp,
-		validators: make([]PolicyValidator, 0),
+		validators: make([]Validator, 0),
 		onChange:   make([]func(*CompiledPolicy), 0),
 	}
 
@@ -86,7 +86,7 @@ func (l *Loader) Load(ctx context.Context) (*CompiledPolicy, error) {
 	}
 
 	// Parse YAML
-	var config PolicyConfig
+	var config Config
 	if parseErr := yaml.Unmarshal(data, &config); parseErr != nil {
 		return nil, fmt.Errorf("parsing policy YAML: %w", parseErr)
 	}
@@ -163,19 +163,19 @@ func (l *Loader) StopWatch() {
 }
 
 // ParseYAML parses a YAML policy configuration.
-func ParseYAML(data []byte) (*PolicyConfig, error) {
-	var config PolicyConfig
+func ParseYAML(data []byte) (*Config, error) {
+	var config Config
 	if err := yaml.Unmarshal(data, &config); err != nil {
 		return nil, err
 	}
 	return &config, nil
 }
 
-// DefaultPolicyValidator validates policy configuration.
-type DefaultPolicyValidator struct{}
+// DefaultValidator validates policy configuration.
+type DefaultValidator struct{}
 
 // Validate validates the policy configuration.
-func (v *DefaultPolicyValidator) Validate(config *PolicyConfig) error {
+func (v *DefaultValidator) Validate(config *Config) error {
 	if config.Version == "" {
 		return fmt.Errorf("policy version is required")
 	}
@@ -205,10 +205,10 @@ func (v *DefaultPolicyValidator) Validate(config *PolicyConfig) error {
 }
 
 // ExamplePolicy returns an example policy configuration.
-func ExamplePolicy() *PolicyConfig {
-	return &PolicyConfig{
+func ExamplePolicy() *Config {
+	return &Config{
 		Version: "1.0",
-		Metadata: PolicyMetadata{
+		Metadata: Metadata{
 			Name:        "example-policy",
 			Description: "Example security policy",
 		},

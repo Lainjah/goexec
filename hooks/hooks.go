@@ -258,14 +258,19 @@ func NewLoggingHook(logger func(format string, args ...interface{})) *LoggingHoo
 	return &LoggingHook{logger: logger}
 }
 
-func (h *LoggingHook) Name() string  { return "logging" }
+// Name returns the hook name.
+func (h *LoggingHook) Name() string { return "logging" }
+
+// Priority returns the hook priority.
 func (h *LoggingHook) Priority() int { return 1000 }
 
+// PreExecute is called before command execution.
 func (h *LoggingHook) PreExecute(ctx context.Context, cmd *executor.Command) (*executor.Command, error) {
 	h.logger("Executing: %s %v", cmd.Binary, cmd.Args)
 	return cmd, nil
 }
 
+// PostExecute is called after command execution.
 func (h *LoggingHook) PostExecute(ctx context.Context, cmd *executor.Command, result *executor.Result, err error) error {
 	if err != nil {
 		h.logger("Execution failed: %s - %v", cmd.Binary, err)

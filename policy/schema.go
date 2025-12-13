@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-// PolicyConfig represents the YAML policy structure.
-type PolicyConfig struct {
+// Config represents the YAML policy structure.
+type Config struct {
 	Version         string                   `yaml:"version"`
-	Metadata        PolicyMetadata           `yaml:"metadata"`
+	Metadata        Metadata                 `yaml:"metadata"`
 	Global          GlobalConfig             `yaml:"global"`
 	Binaries        []BinaryConfig           `yaml:"binaries"`
 	SandboxProfiles map[string]SandboxConfig `yaml:"sandbox_profiles"`
@@ -17,8 +17,8 @@ type PolicyConfig struct {
 	Alerts          AlertConfig              `yaml:"alerts"`
 }
 
-// PolicyMetadata contains policy metadata.
-type PolicyMetadata struct {
+// Metadata contains policy metadata.
+type Metadata struct {
 	Name        string `yaml:"name"`
 	Description string `yaml:"description"`
 	Created     string `yaml:"created"`

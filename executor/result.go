@@ -174,8 +174,8 @@ type Future[T any] interface {
 	Cancel()
 }
 
-// resultFuture implements Future for Result.
-type resultFuture struct {
+// ResultFuture implements Future for Result.
+type ResultFuture struct {
 	result *Result
 	err    error
 	done   chan struct{}
@@ -183,33 +183,33 @@ type resultFuture struct {
 }
 
 // NewResultFuture creates a new result future.
-func NewResultFuture(cancel func()) *resultFuture {
-	return &resultFuture{
+func NewResultFuture(cancel func()) *ResultFuture {
+	return &ResultFuture{
 		done:   make(chan struct{}),
 		cancel: cancel,
 	}
 }
 
 // Complete sets the result and signals completion.
-func (f *resultFuture) Complete(result *Result, err error) {
+func (f *ResultFuture) Complete(result *Result, err error) {
 	f.result = result
 	f.err = err
 	close(f.done)
 }
 
 // Wait blocks until the result is available.
-func (f *resultFuture) Wait() (*Result, error) {
+func (f *ResultFuture) Wait() (*Result, error) {
 	<-f.done
 	return f.result, f.err
 }
 
 // Done returns a channel that is closed when the result is ready.
-func (f *resultFuture) Done() <-chan struct{} {
+func (f *ResultFuture) Done() <-chan struct{} {
 	return f.done
 }
 
 // Cancel attempts to cancel the operation.
-func (f *resultFuture) Cancel() {
+func (f *ResultFuture) Cancel() {
 	if f.cancel != nil {
 		f.cancel()
 	}

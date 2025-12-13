@@ -105,7 +105,7 @@ type RateLimitConfig struct {
 
 // CompiledPolicy is a validated, optimized policy ready for use.
 type CompiledPolicy struct {
-	raw         *PolicyConfig
+	raw         *Config
 	version     string
 	hash        string
 	binaryIndex map[string]*BinaryPolicy
@@ -114,7 +114,7 @@ type CompiledPolicy struct {
 }
 
 // NewCompiledPolicy creates a new compiled policy from configuration.
-func NewCompiledPolicy(config *PolicyConfig) (*CompiledPolicy, error) {
+func NewCompiledPolicy(config *Config) (*CompiledPolicy, error) {
 	cp := &CompiledPolicy{
 		raw:         config,
 		version:     config.Version,

@@ -148,7 +148,8 @@ const (
 type PolicyLoader = policy.Loader
 
 // PolicyConfig represents a loaded policy configuration.
-type PolicyConfig = policy.PolicyConfig
+// Deprecated: Use policy.Config instead.
+type PolicyConfig = policy.Config
 
 // CompiledPolicy is a compiled and ready-to-use policy.
 type CompiledPolicy = policy.CompiledPolicy
@@ -295,7 +296,7 @@ func LoadPolicy(basePath, policyFile string) (*PolicyLoader, error) {
 //
 //	loader, err := goexec.LoadPolicyWithValidation(
 //	    "/etc/goexec", "policy.yaml",
-//	    policy.WithValidator(&policy.DefaultPolicyValidator{}),
+//	    policy.WithValidator(&policy.DefaultValidator{}),
 //	)
 func LoadPolicyWithValidation(basePath, policyFile string, opts ...policy.LoaderOption) (*PolicyLoader, error) {
 	return policy.NewLoader(basePath, policyFile, opts...)

@@ -232,16 +232,16 @@ func NewArgumentMatcher(patterns []*ArgPattern) (*ArgumentMatcher, error) {
 }
 
 // MatchAll checks if all arguments match allowed patterns.
-func (m *ArgumentMatcher) MatchAll(args []string) (bool, string) {
+func (m *ArgumentMatcher) MatchAll(args []string) (matched bool, reason string) {
 	for i, arg := range args {
-		matched := false
+		argMatched := false
 		for _, p := range m.patterns {
 			if p.Matches(arg, i) {
-				matched = true
+				argMatched = true
 				break
 			}
 		}
-		if !matched {
+		if !argMatched {
 			return false, fmt.Sprintf("argument %d (%q) does not match any allowed pattern", i, arg)
 		}
 	}

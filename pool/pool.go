@@ -379,7 +379,6 @@ func (w *worker) run() {
 				return
 			}
 
-			isIdle = false
 			atomic.AddInt32(&w.pool.stats.activeWorkers, 1)
 			w.pool.executeTask(task)
 			atomic.AddInt32(&w.pool.stats.activeWorkers, -1)

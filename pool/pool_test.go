@@ -122,8 +122,10 @@ func TestPool_Submit_BlockingStrategy(t *testing.T) {
 	}()
 
 	// Fill the queue
-	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
-	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	submitErr1 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	_ = submitErr1 // Ignore submit errors for test purposes
+	submitErr2 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	_ = submitErr2 // Ignore submit errors for test purposes
 
 	// This should block briefly, then succeed or timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
@@ -152,8 +154,10 @@ func TestPool_Submit_RejectStrategy(t *testing.T) {
 	}()
 
 	// Fill the queue
-	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
-	_ = p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
+	submitErr1 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
+	_ = submitErr1 // Ignore submit errors for test purposes
+	submitErr2 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(100 * time.Millisecond) }})
+	_ = submitErr2 // Ignore submit errors for test purposes
 
 	// This should reject immediately
 	err = p.Submit(context.Background(), Task{Fn: func() {}})
@@ -184,8 +188,10 @@ func TestPool_Submit_CallerRunsStrategy(t *testing.T) {
 
 	var executed int32
 	// Fill the queue
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
-	p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	submitErr1 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	_ = submitErr1 // Ignore submit errors for test purposes
+	submitErr2 := p.Submit(context.Background(), Task{Fn: func() { time.Sleep(50 * time.Millisecond) }})
+	_ = submitErr2 // Ignore submit errors for test purposes
 
 	// This should execute in caller's goroutine if queue is full
 	task := Task{
@@ -230,18 +236,20 @@ func TestPool_Submit_DropOldestStrategy(t *testing.T) {
 	var dropped int32
 
 	// Fill the queue with a task that sets a flag
-	p.Submit(context.Background(), Task{
+	submitErr1 := p.Submit(context.Background(), Task{
 		Fn: func() {
 			atomic.AddInt32(&executed, 1)
 		},
 	})
+	_ = submitErr1 // Ignore submit errors for test purposes
 
 	// Try to submit another - should drop the first
-	err = p.Submit(context.Background(), Task{
+	submitErr := p.Submit(context.Background(), Task{
 		Fn: func() {
 			atomic.AddInt32(&dropped, 1)
 		},
 	})
+	_ = submitErr // Ignore submit errors for test purposes
 
 	if err != nil {
 		t.Logf("Submit failed (may have rejected): %v", err)

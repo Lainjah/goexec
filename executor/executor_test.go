@@ -647,10 +647,20 @@ func TestExecutor_Execute_CommandTimeout(t *testing.T) {
 }
 
 func TestExecutor_Execute_EmptyArgs(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo").Build()
+	cmd, err := NewCommand("/bin/echo").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	result, err := exec.Execute(ctx, cmd)
@@ -664,13 +674,23 @@ func TestExecutor_Execute_EmptyArgs(t *testing.T) {
 }
 
 func TestExecutor_Execute_WithStdin(t *testing.T) {
-	exec, _ := NewBuilder().Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
 	stdin := strings.NewReader("test input")
-	cmd, _ := NewCommand("/bin/cat").
+	cmd, err := NewCommand("/bin/cat").
 		WithStdin(stdin).
 		Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -888,13 +908,23 @@ func TestExecutor_Execute_PreHookError(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithHooks(hook).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithHooks(hook).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "test").Build()
+	cmd, err := NewCommand("/bin/echo", "test").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
-	_, err := exec.Execute(ctx, cmd)
+	_, err = exec.Execute(ctx, cmd)
 	if err == nil {
 		t.Error("Expected error from pre-execute hook")
 	}
@@ -911,10 +941,20 @@ func TestExecutor_Execute_PostHookError(t *testing.T) {
 		},
 	}
 
-	exec, _ := NewBuilder().WithHooks(hook).Build()
-	defer exec.Shutdown(context.Background())
+	exec, err := NewBuilder().WithHooks(hook).Build()
+	if err != nil {
+		t.Fatalf("Build() failed: %v", err)
+	}
+	defer func() {
+		if shutdownErr := exec.Shutdown(context.Background()); shutdownErr != nil {
+			t.Errorf("Shutdown() failed: %v", shutdownErr)
+		}
+	}()
 
-	cmd, _ := NewCommand("/bin/echo", "test").Build()
+	cmd, err := NewCommand("/bin/echo", "test").Build()
+	if err != nil {
+		t.Fatalf("Failed to build command: %v", err)
+	}
 	ctx := context.Background()
 
 	result, err := exec.Execute(ctx, cmd)

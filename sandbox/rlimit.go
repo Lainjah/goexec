@@ -1,23 +1,5 @@
 package sandbox
 
-import (
-	"runtime"
-	"syscall"
-)
-
-// Rlimit resource types.
-const (
-	RlimitCPU     = syscall.RLIMIT_CPU    // CPU time in seconds
-	RlimitFSize   = syscall.RLIMIT_FSIZE  // Maximum file size
-	RlimitData    = syscall.RLIMIT_DATA   // Maximum data segment size
-	RlimitStack   = syscall.RLIMIT_STACK  // Maximum stack size
-	RlimitCore    = syscall.RLIMIT_CORE   // Maximum core file size
-	RlimitNOFile  = syscall.RLIMIT_NOFILE // Maximum open files
-	RlimitAS      = syscall.RLIMIT_AS     // Maximum address space
-	RlimitNProc   = 6                     // Maximum processes (RLIMIT_NPROC on Linux)
-	RlimitMemlock = 8                     // Maximum locked memory (RLIMIT_MEMLOCK on Linux)
-)
-
 // Rlimit represents a resource limit.
 type Rlimit struct {
 	// Resource is the resource type.
@@ -32,27 +14,18 @@ type Rlimit struct {
 
 // SetRlimit sets a resource limit.
 func SetRlimit(resource int, soft, hard uint64) error {
-	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+	if !rlimitSupported() {
 		return nil
 	}
-
-	rlim := syscall.Rlimit{
-		Cur: soft,
-		Max: hard,
-	}
-
-	return syscall.Setrlimit(resource, &rlim)
+	return setRlimitImpl(resource, soft, hard)
 }
 
 // GetRlimit gets a resource limit.
 func GetRlimit(resource int) (soft, hard uint64, err error) {
-	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
+	if !rlimitSupported() {
 		return 0, 0, nil
 	}
-
-	var rlim syscall.Rlimit
-	err = syscall.Getrlimit(resource, &rlim)
-	return rlim.Cur, rlim.Max, err
+	return getRlimitImpl(resource)
 }
 
 // RlimitUnlimited represents unlimited resource.

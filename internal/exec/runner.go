@@ -153,24 +153,13 @@ func (r *Runner) Run(ctx context.Context, config *RunConfig) (*RunResult, error)
 			SystemTime: cmd.ProcessState.SystemTime(),
 		}
 
-		// Check if killed by signal
-		if ws, ok := cmd.ProcessState.Sys().(syscall.WaitStatus); ok {
-			if ws.Signaled() {
-				result.Signal = ws.Signal()
-			}
+		// Check if killed by signal (platform-specific)
+		if sig, signaled := extractSignal(cmd.ProcessState.Sys()); signaled {
+			result.Signal = sig
 		}
 	}
 
 	return result, err
-}
-
-// defaultSysProcAttr returns secure default process attributes.
-func defaultSysProcAttr() *syscall.SysProcAttr {
-	return &syscall.SysProcAttr{
-		// Create a new process group so we can kill all children
-		Setpgid: true,
-		Pgid:    0,
-	}
 }
 
 // BuildEnv creates an environment slice from a map.

